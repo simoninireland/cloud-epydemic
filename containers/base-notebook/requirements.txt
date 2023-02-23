@@ -1,5 +1,8 @@
 epydemic >= 1.12
 epydemic_signals
+jupyter
+notebook
 matplotlib
 numpy
+scipy
 pandas

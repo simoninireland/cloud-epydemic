@@ -21,7 +21,7 @@
 
 # The containers
 CONTAINERS = \
-	notebook
+	base-notebook
 
 # The container repo
 REPO = simoninireland/cloud-epydemic
@@ -31,13 +31,17 @@ REPO = simoninireland/cloud-epydemic
 
 DOCKER = docker
 DOCKER_BUILD = $(DOCKER) buildx build
+DOCKER_BUILD_CLEAN = $(DOCKER) buildx build --pull --no-cache
 CHDIR = cd
 
 
-# ---------- Target ----------
+# ---------- Targets ----------
 
 build:
 	$(foreach c,$(CONTAINERS),$(CHDIR) $(c) && $(DOCKER_BUILD) --tag $(c) .)
 
+build-clean:
+	$(foreach c,$(CONTAINERS),$(CHDIR) $(c) && $(DOCKER_BUILD_CLEAN) --tag $(c) .)
+
 live:
-	$(DOCKER) run -it -p 8000:8888 notebook:latest
+	$(DOCKER) run -it -p 8888:8888 base-notebook:latest
