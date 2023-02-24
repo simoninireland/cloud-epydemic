@@ -16,7 +16,7 @@ To create this file, copy ``credentials.example`` to
 ``credentials.tfvars`` and fill-in the variables, all of which are
 quoted strings:
 
-+-------------------+-------------------------------------------+---------------+
++-------------------+------------------------------------------+----------------+
 | Variable          | Description                              | Example        |
 +-------------------+------------------------------------------+----------------+
 | tenancy_ocid      | OCID of the tenancy                      |                |
