@@ -22,5 +22,5 @@ when re-building the image by using
 +===================+=====================================+==========+
 | EPYDEMIC_USER     | Username for the non-root user      | epydemic |
 +-------------------+-------------------------------------+----------+
-| EPYDEMIC_PASSWORD | Password for accessing the notebook | empty    |
+| EPYDEMIC_PASSWORD | Password for accessing the notebook | <empty>  |
 +-------------------+-------------------------------------+----------+
