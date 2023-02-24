@@ -17,6 +17,10 @@ The following arguments (with their default values) can be provided
 when re-building the image by using
 ``docker buildx build -t <tag> --build-arg <key>=<value>``:
 
-``EPYDEMIC_USER`` -- username for the non-root user (``epydemic``)
-
-``EPYDEMIC_PASSWORD`` -- password for accessing the notebook (empty)
++-------------------+-------------------------------------+----------+
+| Description       | Variable                            | Default  |
++===================+=====================================+==========+
+| EPYDEMIC_USER     | Username for the non-root user      | epydemic |
++-------------------+-------------------------------------+----------+
+| EPYDEMIC_PASSWORD | Password for accessing the notebook | empty    |
++-------------------+-------------------------------------+----------+
