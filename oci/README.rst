@@ -18,12 +18,18 @@ quoted strings:
 
 +-------------------+------------------------------------------+----------------+
 | Variable          | Description                              | Example        |
++===================+==========================================+================+
+| tenancy_ocid      | OCID of the tenancy                      |                |
 +-------------------+------------------------------------------+----------------+
-| tenancy_ocid      | OCID of the tenancy                      | ocid:...       |
 | oci_region        | The region hosting the tenancy           | uk-london-1    |
-| compartment_ocid  | OCID of the compartment for the cluster  | ocid:...       |
-| user_ocid         | OCID of the user running the cluster     | ocid:...       |
-| key_fingerprint   | User's public key fingerprint            | 03:44:...      |
++-------------------+------------------------------------------+----------------+
+| compartment_ocid  | OCID of the compartment for the cluster  |                |
++-------------------+------------------------------------------+----------------+
+| user_ocid         | OCID of the user running the cluster     |                |
++-------------------+------------------------------------------+----------------+
+| key_fingerprint   | User's public key fingerprint            |                |
++-------------------+------------------------------------------+----------------+
 | private_key_path  | Local path to private key in PEM format  | ~/.oci/key.pem |
++-------------------+------------------------------------------+----------------+
 | home_address_cidr | Address block to accept connections from | 12.34.0.0/16   |
 +-------------------+-------------------------------------------+---------------+
