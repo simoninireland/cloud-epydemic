@@ -8,6 +8,11 @@ variable "oci_region" {
   type = string
 }
 
+variable "compartment_ocid" {
+  description = "Compartment ID"
+  type = string
+}
+
 variable "user_ocid" {
   description = "User ID"
   type = string
@@ -21,11 +26,6 @@ variable "private_key_path" {
   description = "Path to private key"
   type = string
   sensitive = true
-}
-
-variable "compartment_ocid" {
-  description = "Compartment ID"
-  type = string
 }
 
 variable "home_address_cidr" {
