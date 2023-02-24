@@ -116,6 +116,7 @@ doc/_build/
 
 # Terraform state and confidential variables
 .terraform/
+.terraform.lock.hcl
 *.tfstate
 *.tfstate.backup
 *.tfvars
