@@ -34,7 +34,7 @@ USER root
 RUN <<EOF
 apt update
 apt-get install -y hdf5-tools
-apt-get install -y hdf5-tools ca-certificates locales fonts-liberation
+apt-get install -y ca-certificates locales fonts-liberation
 EOF
 RUN echo "en_US.UTF-8 en_GB.UTF-8 UTF-8" >/etc/locale.gen && locale-gen
 
