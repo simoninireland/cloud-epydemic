@@ -21,7 +21,8 @@
 
 # The containers
 CONTAINERS = \
-	base-notebook
+	base-notebook \
+	controller
 
 # The container repo
 REPO = simoninireland/cloud-epydemic
@@ -38,10 +39,10 @@ CHDIR = cd
 # ---------- Targets ----------
 
 build:
-	$(foreach c,$(CONTAINERS),$(CHDIR) $(c) && $(DOCKER_BUILD) --tag $(c) .)
+	$(foreach c,$(CONTAINERS),($(CHDIR) $(c) && $(DOCKER_BUILD) --tag $(c) .);)
 
 build-clean:
-	$(foreach c,$(CONTAINERS),$(CHDIR) $(c) && $(DOCKER_BUILD_CLEAN) --tag $(c) .)
+	$(foreach c,$(CONTAINERS),($(CHDIR) $(c) && $(DOCKER_BUILD_CLEAN) --tag $(c) .);)
 
 live:
-	$(DOCKER) run -it -p 8888:8888 base-notebook:latest
+	$(DOCKER) run -it -p 8888:8888 controller:latest
