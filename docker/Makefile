@@ -33,10 +33,10 @@ RM = rm -fr
 # ---------- Targets ----------
 
 up: env
-	$(TERRAFORM) apply
+	$(TERRAFORM) apply -auto-approve
 
 down: env
-	$(TERRAFORM) destroy
+	$(TERRAFORM) destroy -auto-approve
 
 .PHONY: env
 env: $(TERRAFORM_DIR)

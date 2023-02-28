@@ -29,12 +29,12 @@ LABEL description="cloud-epydemic Jupyter notebook server"
 LABEL maintainer="Simon Dobson <simon.dobson@st-andrews.ac.uk>"
 
 # Install the HDF5 libraries needed by epyc, and the other
-# libraries needed by Jupyter
+# libraries needed by ipyparallel and Jupyter
 USER root
 RUN <<EOF
 apt update
 apt-get install -y hdf5-tools
-apt-get install -y ca-certificates locales fonts-liberation
+apt-get install -y ca-certificates locales fonts-liberation openssh-client
 EOF
 RUN echo "en_US.UTF-8 en_GB.UTF-8 UTF-8" >/etc/locale.gen && locale-gen
 
@@ -50,8 +50,17 @@ RUN chown $EPYDEMIC_USER requirements.txt
 RUN pip install --upgrade pip wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create mount point for the shared working storage
+ENV EPYDEMIC_STORAGE=shared
+RUN mkdir $EPYDEMIC_STORAGE
+RUN chown $EPYDEMIC_USER $EPYDEMIC_STORAGE
+
 # Switch to the non-root user
 USER $EPYDEMIC_USER
+
+# Create links
+RUN ln -s $EPYDEMIC_STORAGE/.ipython .ipython
+RUN ln -s $EPYDEMIC_STORAGE/.ssh .ssh
 
 # Set up password security instead of access tokens
 ARG EPYDEMIC_PASSWORD=""
@@ -62,8 +71,8 @@ c.NotebookApp.password = "$EPYDEMIC_PASSWORD"
 EOF
 
 # Expose the notebook's port
-EXPOSE 8888/tcp
+EXPOSE 8888
 
 # Run the server, binding to all addresses to avoid issues with virtual networks
-ENTRYPOINT ["jupyter", "notebook", "--ip=0.0.0.0"]
-#ENTRYPOINT ["/bin/bash"]
+#ENTRYPOINT ["jupyter", "notebook", "--ip=0.0.0.0"]
+ENTRYPOINT ["/bin/bash"]

@@ -29,17 +29,17 @@ LABEL maintainer="Simon Dobson <simon.dobson@st-andrews.ac.uk>"
 # Build-time arguments to configure the cluster
 ARG EPYDEMIC_USER="epydemic"
 ARG EPYDEMIC_PROFILE="epydemic"
-ARG EPYDEMIC_WORKING_DIR=/mnt/$EPYDEMIC_USER
 
 # Install the HDF5 libraries needed by epyc and ipyparallel
 USER root
 RUN <<EOF
 apt update
 apt-get install -y hdf5-tools
-apt-get install -y sqlite3
+apt-get install -y sqlite3 openssh-server sudo
 EOF
 
 # Add a user
+ENV EPYDEMIC_USER="$EPYDEMIC_USER"
 ENV EPYDEMIC_HOME="/home/$EPYDEMIC_USER"
 RUN useradd -m -d $EPYDEMIC_HOME -s /bin/bash $EPYDEMIC_USER
 
@@ -50,42 +50,36 @@ RUN chown $EPYDEMIC_USER requirements.txt
 RUN pip install --upgrade pip wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install the controller script
+# Install the root start-up and controller start-up script
+COPY ./start.sh .
+RUN chmod u+x start.sh
 COPY ./start_controller.sh .
 RUN chown $EPYDEMIC_USER start_controller.sh
 RUN chmod u+x start_controller.sh
 
-# Create working storage, which will be treated as a mount point
-ENV EPYDEMIC_WORKING_DIR=$EPYDEMIC_WORKING_DIR
-RUN mkdir $EPYDEMIC_WORKING_DIR
-RUN chown $EPYDEMIC_USER $EPYDEMIC_WORKING_DIR
+# Start the ssh server for tunnelling using keypairs only
+EXPOSE 22
+RUN service ssh start
+#RUN echo "PasswordAuthentication no" >/etc/ssh/sshd_config
+RUN echo "epydemic:secret" | chpasswd
+
+# Create mount point for the shared working storage
+ENV EPYDEMIC_STORAGE=shared
+RUN mkdir $EPYDEMIC_STORAGE
+RUN chown $EPYDEMIC_USER $EPYDEMIC_STORAGE
 
 # Switch to the non-root user
 USER $EPYDEMIC_USER
 
-# Set up the controller configuraiton
-ENV EPYDEMIC_PROFILE=$EPYDEMIC_PROFILE
-ENV EPYDEMIC_PROFILE_DIR=".ipython/profile_$EPYDEMIC_PROFILE/"
-ENV EPYDEMIC_CONTROLLER_FILE="$EPYDEMIC_PROFILE_DIR/ipcontroller_config.py"
-RUN ipython profile create --parallel $EPYDEMIC_PROFILE
-RUN cat >>$EPYDEMIC_CONTROLLER_FILE <<EOF
-# Listen on all interfaces
-c.IPController.ip = ''
+# Create shared information and links
+ENV EPYDEMIC_PROFILE="$EPYDEMIC_PROFILE"
+RUN mkdir $EPYDEMIC_STORAGE/.ipython
+RUN mkdir $EPYDEMIC_STORAGE/.ssh
+RUN ln -s $EPYDEMIC_STORAGE/.ipython .ipython
+RUN ln -s $EPYDEMIC_STORAGE/.ssh .ssh
 
-# ssh-based cluster, without secure authentication or encryption (we assume
-# we're running on a secure network)
-c.IPClusterEngines.engine_launcher_class = 'SSHEngineSetLauncher'
-c.IPController.enable_curve = False
-c.SSHLauncher.to_send = []
-c.SSHLauncher.to_fetch = []
-
-# Persistent store for jobs
-c.IPControiller.db_class = 'SQLiteDB'
-EOF
-
-# Expose the server's ports
-EXPOSE 22/tcp
-
-# Run the server
+# Run the start-up script, which starts sshd and ipcontroller
 #ENTRYPOINT ["./start_controller.sh"]
-ENTRYPOINT ["/bin/bash"]
+USER root
+ENTRYPOINT ["./start.sh"]
+#ENTRYPOINT ["/bin/bash"]

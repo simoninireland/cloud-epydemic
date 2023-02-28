@@ -22,10 +22,11 @@
 # The containers
 CONTAINERS = \
 	base-notebook \
-	controller
+	controller \
+	base-engine
 
 # The container repo
-REPO = simoninireland/cloud-epydemic
+REPO = simoninireland
 
 
 # ---------- Tools ----------
@@ -33,16 +34,20 @@ REPO = simoninireland/cloud-epydemic
 DOCKER = docker
 DOCKER_BUILD = $(DOCKER) buildx build
 DOCKER_BUILD_CLEAN = $(DOCKER) buildx build --pull --no-cache
+DOCKER_PUSH = $(DOCKER) push
 CHDIR = cd
 
 
 # ---------- Targets ----------
 
 build:
-	$(foreach c,$(CONTAINERS),($(CHDIR) $(c) && $(DOCKER_BUILD) --tag $(c) .);)
+	$(foreach c,$(CONTAINERS),($(CHDIR) $(c) && $(DOCKER_BUILD) --tag $(REPO)/$(c) .);)
 
 build-clean:
-	$(foreach c,$(CONTAINERS),($(CHDIR) $(c) && $(DOCKER_BUILD_CLEAN) --tag $(c) .);)
+	$(foreach c,$(CONTAINERS),($(CHDIR) $(c) && $(DOCKER_BUILD_CLEAN) --tag $(REPO)/$(c) .);)
+
+push:
+	$(foreach c,$(CONTAINERS),($(CHDIR) $(c) && $(DOCKER_PUSH) $(REPO)/$(c));)
 
 live:
 	$(DOCKER) run -it -p 8888:8888 controller:latest

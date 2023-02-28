@@ -34,15 +34,23 @@ provider "docker" {}
 # ---------- Container images ----------
 
 resource "docker_image" "notebook" {
-  name = "base-notebook:latest"
+  name = "simoninireland/base-notebook:latest"
+}
+
+resource "docker_image" "controller" {
+  name = "simoninireland/controller:latest"
+}
+
+resource "docker_image" "engine" {
+  name = "simoninireland/base-engine:latest"
 }
 
 
 # ---------- Network ----------
 
-resource "docker_network" "private" {
-  name = "private_cluster_network"
-  internal = true
+resource "docker_network" "cluster_bridge" {
+  name = "cluster_bridge"
+  driver = "bridge"
 }
 
 
@@ -54,16 +62,77 @@ resource "docker_volume" "working" {
 
 # ---------- Containers ----------
 
-resource "docker_container" "notebook" {
+resource "docker_container" "cluster_frontend" {
   image = docker_image.notebook.image_id
-  name  = "epydemic_notebook"
+  name  = "cluster_frontend"
+  depends_on = [
+    docker_container.cluster_controller,
+    docker_container.cluster_engine,
+  ]
+  networks_advanced {
+    name = docker_network.cluster_bridge.id
+  }
   mounts {
     type = "volume"
-    target = "/mnt/working"
+    target = "/home/epydemic/shared"
     source = docker_volume.working.id
   }
   ports {
     internal = 8888
     external = 8888
+  }
+}
+
+resource "docker_container" "cluster_controller" {
+  image = docker_image.controller.image_id
+  name = "cluster_controller"
+  hostname = "cluster_controller"
+  env = [ "EPYDEMIC_CONTROLLER_HOST=cluster_controller" ]
+  networks_advanced {
+    name = docker_network.cluster_bridge.id
+  }
+  mounts {
+    type = "volume"
+    target = "/home/epydemic/shared"
+    source = docker_volume.working.id
+  }
+}
+
+resource "docker_container" "cluster_engine" {
+  image = docker_image.engine.image_id
+  name = "cluster_engine"
+  depends_on = [ docker_container.cluster_controller ]
+  hostname = "cluster_engine"
+  networks_advanced {
+    name = docker_network.cluster_bridge.id
+  }
+  mounts {
+    type = "volume"
+    target = "/home/epydemic/shared"
+    source = docker_volume.working.id
+  }
+}
+
+
+# ---------- Debugging ----------
+
+resource "docker_image" "bastion" {
+  name = "alpine:latest"
+}
+
+resource "docker_container" "cluster_bastion" {
+  image = docker_image.bastion.image_id
+  name= "cluster_bastion"
+  depends_on = [ docker_container.cluster_controller ]
+  hostname = "cluster_bastion"
+  stdin_open = true
+  tty = true
+  networks_advanced {
+    name = docker_network.cluster_bridge.id
+  }
+  mounts {
+    type = "volume"
+    target = "/home/epydemic/shared"
+    source = docker_volume.working.id
   }
 }
