@@ -56,7 +56,7 @@ c.SSHLauncher.to_send = []
 c.SSHLauncher.to_fetch = []
 
 # Persistent store for jobs
-c.IPControiller.db_class = 'SQLiteDB'
+c.IPController.db_class = 'SQLiteDB'
 EOF
 
 # Locate the controller
