@@ -60,8 +60,6 @@ RUN chmod u+x start_engine.sh
 # Start the ssh server for tunnelling using keypairs only
 EXPOSE 22
 RUN service ssh start
-#RUN echo "PasswordAuthentication no" >/etc/ssh/sshd_config
-RUN echo "epydemic:secret" | chpasswd
 
 # Create mount point for the shared working storage
 ENV EPYDEMIC_STORAGE=shared

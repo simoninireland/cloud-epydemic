@@ -70,9 +70,7 @@ c.NotebookApp.token = ""
 c.NotebookApp.password = "$EPYDEMIC_PASSWORD"
 EOF
 
-# Expose the notebook's port
-EXPOSE 8888
-
 # Run the server, binding to all addresses to avoid issues with virtual networks
-#ENTRYPOINT ["jupyter", "notebook", "--ip=0.0.0.0"]
-ENTRYPOINT ["/bin/bash"]
+EXPOSE 8888
+ENTRYPOINT ["jupyter", "notebook", "--ip=0.0.0.0"]
+#ENTRYPOINT ["/bin/bash"]

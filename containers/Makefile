@@ -41,13 +41,16 @@ CHDIR = cd
 # ---------- Targets ----------
 
 build:
-	$(foreach c,$(CONTAINERS),($(CHDIR) $(c) && $(DOCKER_BUILD) --tag $(REPO)/$(c) .);)
+	for c in $(CONTAINERS); do \
+	  ($(CHDIR) $$c && $(DOCKER_BUILD) --tag $(REPO)/$$c .) \
+	done
 
 build-clean:
-	$(foreach c,$(CONTAINERS),($(CHDIR) $(c) && $(DOCKER_BUILD_CLEAN) --tag $(REPO)/$(c) .);)
+	for c in $(CONTAINERS); do \
+	  ($(CHDIR) $$c && $(DOCKER_BUILD_CLEAN) --tag $(REPO)/$$c .) \
+	done
 
 push:
-	$(foreach c,$(CONTAINERS),($(CHDIR) $(c) && $(DOCKER_PUSH) $(REPO)/$(c));)
-
-live:
-	$(DOCKER) run -it -p 8888:8888 controller:latest
+	for c in $(CONTAINERS); do \
+	  ($(CHDIR) $$c && $(DOCKER_PUSH) $(REPO)/$$c) \
+	done
