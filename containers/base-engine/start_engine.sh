@@ -22,12 +22,6 @@
 # We expect one environment variable to be defined by the container:
 #
 # - EPYDEMIC_PROFILE -- the IPython profile for the cluster
-#
-# This is used to compute EPYDEMIC_PROFILE_DIR where the IPython profile
-# lives. This directory will usually be on a volume so that it's shared
-# between all the containers in a cluster. This makes parallelism easier
-# to manage by sharing the config files, rather than explicitly passing
-# around capabilities.
 
 # Start the engine
 ipengine --ip=0.0.0.0 --profile=$EPYDEMIC_PROFILE
