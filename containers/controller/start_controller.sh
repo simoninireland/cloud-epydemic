@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# Start-up script for ipyparallel controller node
+#
 # Copyright (C) 2023 Simon Dobson
 #
 # This file is part of cloud-epydemic, network simulation as a service
@@ -17,11 +19,15 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-# We expect three environment variables to be defined by the container:
+# We expect one environment variable to be defined by the container:
 #
 # - EPYDEMIC_PROFILE -- the IPython profile for the cluster
-# - EPYDEMIC_PROFILE_DIR -- the directory containing this profile
-# - EPYDEMIC_WORKING_DIR -- the working directory for shared storage
+#
+# This is used to compute EPYDEMIC_PROFILE_DIR where the IPython profile
+# lives. This directory will usually be on a volume so that it's shared
+# between all the containers in a cluster. This makes parallelism easier
+# to manage by sharing the config files, rather than explicitly passing
+# around capabilities.
 #
 # We also accept a single run-time variable:
 #
@@ -29,17 +35,33 @@
 #                               running the controller (defaults to
 #                               the result of running hostname)
 
-# Locate the ACLs
-CONTROLLER_ACL="$EPYDEMIC_PROFILE_DIR/security/ipcontroller-client.json"
-ENGINE_ACL="$EPYDEMIC_PROFILE_DIR/security/ipcontroller-engine.json"
+# Create an ssh keypair for tunneling
+ssh-keygen -t rsa -N '' -f .ssh/id_rsa
+cat .ssh/id_rsa.pub >>.ssh/authorized_keys
+ssh-keyscan -t rsa $EPYDEMIC_CONTROLLER_HOST >>.ssh/known_hosts
+
+# Create the profile
+ipython profile create --parallel $EPYDEMIC_PROFILE
+EPYDEMIC_PROFILE_DIR=`ipython profile locate $EPYDEMIC_PROFILE`
+EPYDEMIC_CONTROLLER_FILE="$EPYDEMIC_PROFILE_DIR/ipcontroller_config.py"
+cat >>$EPYDEMIC_CONTROLLER_FILE <<EOF
+# Listen on all interfaces
+c.IPController.ip = ''
+
+# ssh-based cluster, without secure authentication or encryption (we assume
+# we're running on a secure network)
+c.IPClusterEngines.engine_launcher_class = 'SSHEngineSetLauncher'
+c.IPController.enable_curve = False
+c.SSHLauncher.to_send = []
+c.SSHLauncher.to_fetch = []
+
+# Persistent store for jobs
+c.IPControiller.db_class = 'SQLiteDB'
+EOF
 
 # Locate the controller
 HOST=`hostname`
 CONTROLLER_HOST=${EPYDEMIC_CONTROLLER_HOST:-$HOST}
 
 # Start the controller
-nohup ipcontroller --ip=0.0.0.0 --profile=$EPYDEMIC_PROFILE --ssh=$CONTROLLER_HOST &
-
-# Publish the ACLs
-cp $CONTROLLER_ACL $EPYDEMIC_WORKING_DIR
-cp $ENGINE_ACL $EPYDEMIC_WORKING_DIR
+ipcontroller --ip='*' --profile=$EPYDEMIC_PROFILE --ssh=$CONTROLLER_HOST
