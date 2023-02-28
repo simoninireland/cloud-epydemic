@@ -17,24 +17,46 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-FROM python:3.9
-LABEL description="cloud-epydemic ipyparallel compute server"
+ARG BASE_IMAGE="python:3.9"
+
+# Base image
+FROM $BASE_IMAGE
+LABEL description="cloud-epydemic compute server"
 LABEL maintainer="Simon Dobson <simon.dobson@st-andrews.ac.uk>"
 
 # Install the HDF5 libraries needed by epyc
 USER root
-RUN apt update
-RUN apt-get install -y hdf5-tools
+RUN <<EOF
+apt update
+apt-get install -y hdf5-tools
+EOF
+RUN echo "en_US.UTF-8 en_GB.UTF-8 UTF-8" >/etc/locale.gen && locale-gen
+
+# Add a user
+ARG EPYDEMIC_USER="epydemic"
+ENV EPYDEMIC_HOME="/home/$EPYDEMIC_USER"
+RUN useradd -m -d $EPYDEMIC_HOME -s /bin/bash $EPYDEMIC_USER
 
 # Install the additional Python dependencies
-WORKDIR /home/jovyan
+WORKDIR $EPYDEMIC_HOME
 COPY ./requirements.txt .
+RUN chown $EPYDEMIC_USER requirements.txt
 RUN pip install --upgrade pip wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the notebook's port
+# Switch to the non-root user
+USER $EPYDEMIC_USER
+
+# Set up the engine configuraiton
+ARG EPYDEMIC_PROFILE="epydemic"
+RUN ipyparallel profile create --parallel --profile=$EPYDEMIC_PROFILE
+RUN cat >>.jupyter/jupyter_notebook_config.py <<EOF
+c.IpController.ip = ''
+EOF
+
+# Expose the server's ports
 EXPOSE 8888/tcp
 
-# Switch back to the non-root user before running the server
-USER jovyan
-ENTRYPOINT ["jupyter", "notebook"]
+# Run the server, binding to all addresses to avoid issues with virtual networks
+ENTRYPOINT ["ipython", "notebook"]
+#ENTRYPOINT ["/bin/bash"]
