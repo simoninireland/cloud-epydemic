@@ -35,14 +35,17 @@ provider "docker" {}
 
 resource "docker_image" "notebook" {
   name = "simoninireland/base-notebook:latest"
+  keep_locally = true
 }
 
 resource "docker_image" "controller" {
   name = "simoninireland/controller:latest"
+  keep_locally = true
 }
 
 resource "docker_image" "engine" {
   name = "simoninireland/base-engine:latest"
+  keep_locally = true
 }
 
 
@@ -123,6 +126,7 @@ resource "docker_container" "cluster_engine" {
 
 resource "docker_image" "bastion" {
   name = "alpine:latest"
+  keep_locally = true
 }
 
 resource "docker_container" "cluster_bastion" {
