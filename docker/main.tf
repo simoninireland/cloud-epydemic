@@ -75,6 +75,7 @@ resource "docker_container" "cluster_frontend" {
     docker_container.cluster_controller,
     docker_container.cluster_engine,
   ]
+  # env = [ "EPYDEMIC_PASSWORD=secret" ]
   networks_advanced {
     name = docker_network.cluster_bridge.id
   }
