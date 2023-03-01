@@ -33,14 +33,21 @@
 #
 # The password is blank by default.
 
-# Grab password
+# Grab password from the environment, if present
 PASSWORD=${EPYDEMIC_PASSWORD:-}
 
-# Create a SHA1 hash in the correct format
-RAWHASH=`echo $PASSWORD | sha1sum | cut -d ' ' -f 1`
-HASH="sha1:$RAWHASH"
+# Create a hash of the password if present
+if [ -n "$PASSWORD" ]; then
+    # We use the code from Jupyter to make sure we follow the syntax as
+    # (and if) it changes,
+    # See https://testnb.readthedocs.io/en/latest/public_server.html
+    HASH=`echo $PASSWORD | python -c "from notebook.auth import passwd; import sys; p = sys.stdin.readline().strip(); print(passwd(p));"`
+else
+    # Empty password, no authentication
+    HASH=""
+fi
 
-# Disable token-based access control and install a password
+# Disable token-based access control and install a password hash
 cd $EPYDEMIC_HOME
 jupyter notebook --generate-config
 cat >>.jupyter/jupyter_notebook_config.py <<EOF
