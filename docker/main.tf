@@ -56,7 +56,10 @@ resource "docker_network" "cluster_bridge" {
 
 # ---------- Storage ----------
 
-resource "docker_volume" "working" {
+resource "docker_volume" "shared" {
+}
+
+resource "docker_volume" "data" {
 }
 
 
@@ -75,7 +78,7 @@ resource "docker_container" "cluster_frontend" {
   mounts {
     type = "volume"
     target = "/home/epydemic/shared"
-    source = docker_volume.working.id
+    source = docker_volume.shared.id
   }
   ports {
     internal = 8888
@@ -94,7 +97,7 @@ resource "docker_container" "cluster_controller" {
   mounts {
     type = "volume"
     target = "/home/epydemic/shared"
-    source = docker_volume.working.id
+    source = docker_volume.shared.id
   }
 }
 
@@ -103,13 +106,14 @@ resource "docker_container" "cluster_engine" {
   name = "cluster_engine"
   depends_on = [ docker_container.cluster_controller ]
   hostname = "cluster_engine"
+  env = [ "EPYDEMIC_ENGINES=4" ]
   networks_advanced {
     name = docker_network.cluster_bridge.id
   }
   mounts {
     type = "volume"
     target = "/home/epydemic/shared"
-    source = docker_volume.working.id
+    source = docker_volume.shared.id
   }
 }
 
@@ -133,6 +137,6 @@ resource "docker_container" "cluster_bastion" {
   mounts {
     type = "volume"
     target = "/home/epydemic/shared"
-    source = docker_volume.working.id
+    source = docker_volume.shared.id
   }
 }

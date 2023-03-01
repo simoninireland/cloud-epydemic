@@ -11,6 +11,21 @@ The following arguments (with their default values) can be provided
 when re-building the image by using
 ``docker buildx build -t <tag> --build-arg <key>=<value>``:
 
-``EPYDEMIC_USER`` -- username for the non-root user ("epydemic")
++-------------------+-------------------------------------+----------+
+| Description       | Variable                             | Default |
++===================+=====================================+==========+
+| EPYDEMIC_USER     | Username for the non-root user      | epydemic |
++-------------------+-------------------------------------+----------+
+| EPYDEMIC_PASSWORD | Password for accessing the notebook | <empty> |
++-------------------+-------------------------------------+----------+
 
-``EPYDEMIC_PROFILE`` -- the ``ipyparallel`` profile name ("epydemic")
+Run-time arguments
+------------------
+
+We also accept an optional build-time variable:
+
++------------------+-------------------------------------------------+---------+
+| Description      | Variable                                        | Default |
++===================+================================================+=========+
+| EPYDEMIC_ENGINES | The number of engines to start in the container | 1       |
++------------------+-------------------------------------------------+---------+

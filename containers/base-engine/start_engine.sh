@@ -22,6 +22,16 @@
 # We expect one environment variable to be defined by the container:
 #
 # - EPYDEMIC_PROFILE -- the IPython profile for the cluster
+#
+# We also accept an optional build-time variable:
+#
+# - EPYDEMIC_ENGINES -- the number of engines in the container
+#
+# This defaults to 1, and can be set to any value to deal with
+# multicore systems.
+
+# Compute the number of engines
+ENGINES=${EPYDEMIC_ENGINES:-1}
 
 # Start the engine
-ipengine --ip=0.0.0.0 --profile=$EPYDEMIC_PROFILE
+ipcluster engines --n=$ENGINES --profile=$EPYDEMIC_PROFILE
