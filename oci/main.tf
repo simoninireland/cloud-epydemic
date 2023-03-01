@@ -39,29 +39,25 @@ provider "oci" {
 
 # ---------- Base virtual network ----------
 
-resource "oci_core_vcn" "demo_vcn" {
+resource "oci_core_vcn" "cluster_vcn" {
   compartment_id = var.compartment_ocid
   cidr_block     = "10.0.0.0/16"
-  display_name   = "demo-vcn"
-  dns_label      = "epydemic"
-  freeform_tags = {
-    "project-name" = "blogpost"
-  }
+  display_name   = "cluster_vcn"
 }
 
 
 # ---------- Access control ----------
 
-resource "oci_core_security_list" "public_sn_sl" {
+resource "oci_core_security_list" "cluster_public_subnet" {
   compartment_id = var.compartment_ocid
-  vcn_id         = oci_core_vcn.demo_vcn.id
-  display_name   = "demo-vcn - security list for the public subnet"
+  vcn_id         = oci_core_vcn.cluster_vcn.id
+  display_name   = "Security list for the public subnet"
 
   ingress_security_rules {
     protocol    = 6
     source_type = "CIDR_BLOCK"
     source      = var.home_address_cidr
-    description = "access to container instance port 80 from home"
+    description = "Access to container instance port 80 from StA"
     tcp_options {
       min = 80
       max = 80
@@ -72,71 +68,58 @@ resource "oci_core_security_list" "public_sn_sl" {
     protocol         = 6
     destination_type = "CIDR_BLOCK"
     destination      = "0.0.0.0/0"
-    description      = "access to container registries via HTTPS"
+    description      = "Access to container registries via HTTPS"
     tcp_options {
       min = 443
       max = 443
     }
-  }
-  freeform_tags = {
-    "project-name" = "blogpost"
   }
 }
 
 
 # ---------- Subnet ----------
 
-resource "oci_core_subnet" "demo_subnet" {
+resource "oci_core_subnet" "cluster_subnet" {
   cidr_block     = "10.0.0.0/24"
   compartment_id = var.compartment_ocid
-  vcn_id         = oci_core_vcn.demo_vcn.id
-  display_name   = "demo vcn - container instance (public) subnet"
-  dns_label      = "containers"
+  vcn_id         = oci_core_vcn.cluster_vcn.id
+  display_name   = "Container instances (public) subnet"
+
   security_list_ids = [
-    oci_core_security_list.public_sn_sl.id
+    oci_core_security_list.cluster_public_subnet.id
   ]
-  route_table_id = oci_core_route_table.demo_igw_rt.id
-  freeform_tags = {
-    "project-name" = "blogpost"
-  }
+  route_table_id = oci_core_route_table.cluster_gateway_router.id
 }
 
-resource "oci_core_internet_gateway" "demo_igw" {
+resource "oci_core_internet_gateway" "cluster_gateway" {
   compartment_id = var.compartment_ocid
-  vcn_id         = oci_core_vcn.demo_vcn.id
-  display_name   = "demo-vcn - Internet gateway"
+  vcn_id         = oci_core_vcn.cluster_vcn.id
+  display_name   = "Internet gateway"
   enabled        = true
 }
 
-resource "oci_core_route_table" "demo_igw_rt" {
+resource "oci_core_route_table" "cluster_gateway_router" {
   compartment_id = var.compartment_ocid
-  vcn_id         = oci_core_vcn.demo_vcn.id
-  display_name   = "demo vcn - Internet gateway route table"
+  vcn_id         = oci_core_vcn.cluster_vcn.id
+  display_name   = "Internet gateway routing table"
+
   route_rules {
-    network_entity_id = oci_core_internet_gateway.demo_igw.id
+    network_entity_id = oci_core_internet_gateway.cluster_gateway.id
     destination       = "0.0.0.0/0"
-  }
-  freeform_tags = {
-    "project-name" = "blogpost"
   }
 }
 
 
 # ---------- Container instances -------------------
 
-data "oci_identity_availability_domains" "local_ads" {
+data "oci_identity_availability_domains" "cluster_availability" {
   compartment_id = var.compartment_ocid
 }
 
-resource "oci_container_instances_container_instance" "demo_container_instance" {
-
-  # create the container instance in AD1
-  availability_domain      = data.oci_identity_availability_domains.local_ads.availability_domains.0.name
+resource "oci_container_instances_container_instance" "cluster_frontend_instance" {
+  availability_domain      = data.oci_identity_availability_domains.cluster_availability.availability_domains.0.name
   compartment_id           = var.compartment_ocid
-  display_name             = "demo container instance"
-  freeform_tags            = {
-    "project-name" = "blogpost"
-  }
+  display_name             = "Cluster frontend instance"
 
   container_restart_policy = "ALWAYS"
   shape                    = "CI.Standard.E4.Flex"
@@ -146,14 +129,13 @@ resource "oci_container_instances_container_instance" "demo_container_instance" 
   }
 
   vnics {
-    subnet_id             = oci_core_subnet.demo_subnet.id
-    display_name          = "demo-container-instance"
+    subnet_id             = oci_core_subnet.cluster_subnet.id
     is_public_ip_assigned = true
     nsg_ids               = []
   }
 
   containers {
-    image_url    = "httpd:2.4"
-    display_name = "demo apache http server container"
+    image_url    = "siminireland/base-notebook:latest"
+    display_name = "Cluster notebook frontend"
   }
 }
