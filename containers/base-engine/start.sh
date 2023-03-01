@@ -23,4 +23,4 @@
 /usr/sbin/sshd
 
 # Run the controller script
-runuser -u $EPYDEMIC_USER ./start_engine.sh
+exec runuser -u $EPYDEMIC_USER ./start_engine.sh
