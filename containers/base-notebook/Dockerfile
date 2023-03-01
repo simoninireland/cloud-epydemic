@@ -50,27 +50,25 @@ RUN chown $EPYDEMIC_USER requirements.txt
 RUN pip install --upgrade pip wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create mount point for the shared working storage
-ENV EPYDEMIC_STORAGE=shared
-RUN mkdir $EPYDEMIC_STORAGE
-RUN chown $EPYDEMIC_USER $EPYDEMIC_STORAGE
+# Install the notebook start-up script
+COPY ./start_notebook.sh .
+RUN chown $EPYDEMIC_USER start_notebook.sh
+RUN chmod u+x start_notebook.sh
 
 # Switch to the non-root user
 USER $EPYDEMIC_USER
+
+# Create mount point for the notebooks, data, and shared working storage
+ENV EPYDEMIC_STORAGE=$EPYDEMIC_HOME/shared
+RUN mkdir $EPYDEMIC_STORAGE
+ENV EPYDEMIC_DATA=$EPYDEMIC_HOME/data
+RUN mkdir $EPYDEMIC_DATA
 
 # Create links
 RUN ln -s $EPYDEMIC_STORAGE/.ipython .ipython
 RUN ln -s $EPYDEMIC_STORAGE/.ssh .ssh
 
-# Set up password security instead of access tokens
-ARG EPYDEMIC_PASSWORD=""
-RUN jupyter notebook --generate-config
-RUN cat >>.jupyter/jupyter_notebook_config.py <<EOF
-c.NotebookApp.token = ""
-c.NotebookApp.password = "$EPYDEMIC_PASSWORD"
-EOF
-
 # Run the server, binding to all addresses to avoid issues with virtual networks
 EXPOSE 8888
-ENTRYPOINT ["jupyter", "notebook", "--ip=0.0.0.0"]
+ENTRYPOINT ["./start_notebook.sh"]
 #ENTRYPOINT ["/bin/bash"]

@@ -57,17 +57,16 @@ COPY ./start_controller.sh .
 RUN chown $EPYDEMIC_USER start_controller.sh
 RUN chmod u+x start_controller.sh
 
-# Start the ssh server for tunnelling using keypairs only
+# Start the ssh server for tunnelling
 EXPOSE 22
 RUN service ssh start
 
-# Create mount point for the shared working storage
-ENV EPYDEMIC_STORAGE=shared
-RUN mkdir $EPYDEMIC_STORAGE
-RUN chown $EPYDEMIC_USER $EPYDEMIC_STORAGE
-
 # Switch to the non-root user
 USER $EPYDEMIC_USER
+
+# Create mount points for the shared storage
+ENV EPYDEMIC_STORAGE=$EPYDEMIC_HOME/shared
+RUN mkdir $EPYDEMIC_STORAGE
 
 # Create shared information and links
 ENV EPYDEMIC_PROFILE="$EPYDEMIC_PROFILE"
