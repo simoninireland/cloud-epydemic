@@ -24,3 +24,10 @@ when re-building the image by using
 +-------------------+-------------------------------------+----------+
 | EPYDEMIC_PASSWORD | Password for accessing the notebook | <empty>  |
 +-------------------+-------------------------------------+----------+
+
+Extending the image
+-------------------
+
+This image can be used as a base for further images, which will
+typically install libraries and/or Python packages to support
+additional features within notebooks.
