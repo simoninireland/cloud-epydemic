@@ -102,8 +102,9 @@ resource "docker_container" "cluster_controller" {
 }
 
 resource "docker_container" "cluster_engine" {
+  count = 3
   image = docker_image.engine.image_id
-  name = "cluster_engine"
+  name = "cluster_engine_${count.index}"
   depends_on = [ docker_container.cluster_controller ]
   hostname = "cluster_engine"
   env = [ "EPYDEMIC_ENGINES=4" ]
