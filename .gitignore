@@ -120,3 +120,6 @@ doc/_build/
 *.tfstate
 *.tfstate.backup
 *.tfvars
+
+# Docker Hub and OCI credentials
+containers/credentials.sh
