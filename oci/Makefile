@@ -21,6 +21,7 @@
 
 TERRAFORM_SRC = \
 	main.tf \
+	platform.tf \
 	variables.tf
 
 VARIABLES = credentials.tfvars
@@ -29,16 +30,23 @@ VARIABLES = credentials.tfvars
 # ---------- Tools ----------
 
 TERRAFORM = terraform
+TERRAFORM_DIR = .terraform
+RM = rm -fr
 
 
 # ---------- Targets ----------
 
 up: env
-	$(TERRAFORM) apply -var-file=$(VARIABLES)
+	$(TERRAFORM) apply -var-file=$(VARIABLES) -auto-approve
 
 down: env
-	$(TERRAFORM) destroy
+	$(TERRAFORM) destroy -var-file=$(VARIABLES) -auto-approve
 
 .PHONY: env
-env: .terraform
+env: $(TERRAFORM_DIR)
+
+$(TERRAFORM_DIR):
 	$(TERRAFORM) init
+
+clean:
+	$(RM) $(TERRAFORM_DIR) *.tfstate*
