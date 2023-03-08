@@ -43,6 +43,7 @@ resource "oci_core_vcn" "cluster_vcn" {
   compartment_id = var.compartment_ocid
   cidr_block     = "10.0.0.0/16"
   display_name   = "cluster_vcn"
+  dns_label = "cluster"
 }
 
 

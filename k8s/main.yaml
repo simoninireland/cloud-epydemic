@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-epydemic-cluster
+  labels:
+    app: cluster
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster
+  template:
+    metadata:
+      labels:
+        app: cluster
+    spec:
+      containers:
+      - name: notebook-frontend
+        image: simoninireland/base-notebook:latest
+        ports:
+        - containerPort: 8888

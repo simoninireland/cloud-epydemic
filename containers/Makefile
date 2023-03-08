@@ -25,8 +25,13 @@ CONTAINERS = \
 	controller \
 	base-engine
 
-# The container repo
-REPO = simoninireland
+# The container repository user
+REPO_USER = simoninireland
+
+
+# ---------- Environment ----------
+
+include ./credentials.sh
 
 
 # ---------- Tools ----------
@@ -42,15 +47,22 @@ CHDIR = cd
 
 build:
 	for c in $(CONTAINERS); do \
-	  ($(CHDIR) $$c && $(DOCKER_BUILD) --tag $(REPO)/$$c .) \
+	  ($(CHDIR) $$c && $(DOCKER_BUILD) --tag $(REPO)/$$c . || exit 1) \
 	done
 
 build-clean:
 	for c in $(CONTAINERS); do \
-	  ($(CHDIR) $$c && $(DOCKER_BUILD_CLEAN) --tag $(REPO)/$$c .) \
+	  ($(CHDIR) $$c && $(DOCKER_BUILD_CLEAN) --tag $(REPO)/$$c . || exit 1) \
 	done
 
-push:
+push-dockerhub:
 	for c in $(CONTAINERS); do \
-	  ($(CHDIR) $$c && $(DOCKER_PUSH) $(REPO)/$$c) \
+	  ($(DOCKER_PUSH) $(REPO_USER)/$$c || exit 1) \
+	done
+
+push-oci:
+	echo $(OCI_PASSWORD) | $(DOCKER) login $(OCI_REGION).ocir.io -u $(OCI_USERNAME) --password-stdin
+	for c in $(CONTAINERS); do \
+	  ($(DOCKER) tag $(REPO_USER)/$$c $(OCI_REGION).ocir.io/$(OCI_OBJECT_STORAGE_NAMESPACE)/$$c || exit 1); \
+	  ($(DOCKER_PUSH) $(OCI_REGION).ocir.io/$(OCI_OBJECT_STORAGE_NAMESPACE)/$$c || exit 1) \
 	done
