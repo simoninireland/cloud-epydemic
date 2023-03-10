@@ -1,0 +1,54 @@
+#!/usr/bin/env python
+#
+# Blocking command-line Redis interface
+#
+# Copyright (C) 2023 Simon Dobson
+#
+# This file is part of cloud-epydemic, network simulation as a service
+#
+# cloud-epydemic is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published byf
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# cloud-epydemic is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
+
+import os
+import sys
+import time
+import redis
+
+# Determine the server name
+serverName = os.environ['EPYDEMIC_AUTHENTICATION_HOST']
+
+# Connect to the Redis server, waiting until it starts
+r = redis.Redis(host=serverName)
+while True:
+    try:
+        r.ping()
+        break
+    except:
+        time.sleep(5)
+
+# Read or write values depending on the presence of an =
+for arg in sys.argv[1:]:
+    kv = arg.find('=')
+    if kv == -1:
+        # a key, wait until the value is available
+        v = None
+        while v is None:
+            v = r.get(arg)
+
+        # print it as a string
+        print(v.decode())
+    else:
+        # a key=value pair, store it
+        k = arg[:kv]
+        v = arg[kv + 1:]
+        r.set(k, v)
