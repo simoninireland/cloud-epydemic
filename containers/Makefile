@@ -40,6 +40,7 @@ DOCKER = docker
 DOCKER_BUILD = $(DOCKER) buildx build
 DOCKER_BUILD_CLEAN = $(DOCKER) buildx build --pull --no-cache
 DOCKER_PUSH = $(DOCKER) push
+DOCTL = doctl
 CHDIR = cd
 
 
@@ -68,4 +69,12 @@ push-oci:
 	for c in $(CONTAINERS); do \
 	  ($(DOCKER) tag $(REPO_USER)/$$c $(OCI_REGION).ocir.io/$(OCI_OBJECT_STORAGE_NAMESPACE)/$$c || exit 1); \
 	  ($(DOCKER_PUSH) $(OCI_REGION).ocir.io/$(OCI_OBJECT_STORAGE_NAMESPACE)/$$c || exit 1) \
+	done
+
+push-digitalocean:
+	$(DOCTL) auth init -t $(DO_TOKEN)
+	$(DOCTL) registry login
+	for c in $(CONTAINERS); do \
+	  ($(DOCKER) tag $(REPO_USER)/$$c registry.digitalocean.com/$(DO_REGISTRY)/$$c || exit 1); \
+	  ($(DOCKER_PUSH) registry.digitalocean.com/$(DO_REGISTRY)/$$c || exit 1) \
 	done
