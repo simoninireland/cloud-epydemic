@@ -29,11 +29,14 @@
 # to manage by sharing the config files, rather than explicitly passing
 # around capabilities.
 #
-# We also accept a single run-time variable:
+# We also accept two run-time variables:
 #
 # - EPYDEMIC_CONTROLLER_HOST -- the name or IP address of the machine
 #                               running the controller (defaults to
 #                               the result of running hostname)
+# - EPYDEMIC_AUTHENTICATION_HOST -- the name or IP address of the machine
+#                                   running the Redis server used for
+#                                   secret sharing
 
 # Create an ssh keypair for tunneling
 ssh-keygen -t rsa -N '' -f .ssh/id_rsa
@@ -64,4 +67,14 @@ HOST=`hostname`
 CONTROLLER_HOST=${EPYDEMIC_CONTROLLER_HOST:-$HOST}
 
 # Start the controller
-ipcontroller --ip='*' --profile=$EPYDEMIC_PROFILE --ssh=$CONTROLLER_HOST
+ipcontroller --ip='*' --profile=$EPYDEMIC_PROFILE --ssh=$CONTROLLER_HOST &
+sleep 10
+
+# Store the access tokens
+./kv $EPYDEMIC_PROFILE/ssh/id_rsa="`cat .ssh/id_rsa`"
+./kv $EPYDEMIC_PROFILE/ssh/controller_fingerprint="`cat .ssh/known_hosts`"
+./kv $EPYDEMIC_PROFILE/ipyparallel/client_json="`cat $EPYDEMIC_PROFILE_DIR/security/ipcontroller-client.json`"
+./kv $EPYDEMIC_PROFILE/ipyparallel/engine_json="`cat $EPYDEMIC_PROFILE_DIR/security/ipcontroller-engine.json`"
+
+# keep running the controller
+sleep infinity

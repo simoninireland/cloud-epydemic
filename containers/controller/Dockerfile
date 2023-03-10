@@ -17,6 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+# The build context for this Dockerfile should be the directory
+# above, to allow access to files in lib/
+
 # Base image can be provided at build-time, and must use the same
 # Python version across the cluster to avoid issues with code serialisation
 ARG BASE_IMAGE="python:3.9"
@@ -41,42 +44,36 @@ EOF
 # Add a user
 ENV EPYDEMIC_USER="$EPYDEMIC_USER"
 ENV EPYDEMIC_HOME="/home/$EPYDEMIC_USER"
+ENV EPYDEMIC_PROFILE="$EPYDEMIC_PROFILE"
 RUN useradd -m -d $EPYDEMIC_HOME -s /bin/bash $EPYDEMIC_USER
 
 # Install the additional Python dependencies
 WORKDIR $EPYDEMIC_HOME
-COPY ./requirements.txt .
+COPY controller/requirements.txt .
 RUN chown $EPYDEMIC_USER requirements.txt
 RUN pip install --upgrade pip wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install the root start-up and controller start-up script
-COPY ./start.sh .
+# Install the root start-up, controller start-up, and
+# key-value access scripts
+COPY controller/start.sh .
 RUN chmod u+x start.sh
-COPY ./start_controller.sh .
+COPY controller/start_controller.sh .
 RUN chown $EPYDEMIC_USER start_controller.sh
 RUN chmod u+x start_controller.sh
+COPY lib/kv .
+RUN chown $EPYDEMIC_USER kv
+RUN chmod u+x kv
 
-# Start the ssh server for tunnelling
+# Expose the ssh port
 EXPOSE 22
 RUN service ssh start
 
-# Switch to the non-root user
+# Create .ssh/
 USER $EPYDEMIC_USER
+RUN mkdir .ssh
+RUN chmod go-rwx .ssh
 
-# Create mount points for the shared storage
-ENV EPYDEMIC_STORAGE=$EPYDEMIC_HOME/shared
-RUN mkdir $EPYDEMIC_STORAGE
-
-# Create shared information and links
-ENV EPYDEMIC_PROFILE="$EPYDEMIC_PROFILE"
-RUN mkdir $EPYDEMIC_STORAGE/.ipython
-RUN mkdir $EPYDEMIC_STORAGE/.ssh
-RUN ln -s $EPYDEMIC_STORAGE/.ipython .ipython
-RUN ln -s $EPYDEMIC_STORAGE/.ssh .ssh
-
-# Run the start-up script, which starts sshd and ipcontroller
-#ENTRYPOINT ["./start_controller.sh"]
+# Run the start-up script
 USER root
 ENTRYPOINT ["./start.sh"]
-#ENTRYPOINT ["/bin/bash"]

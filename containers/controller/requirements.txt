@@ -3,3 +3,4 @@ epydemic_signals
 numpy
 scipy
 pandas
+redis

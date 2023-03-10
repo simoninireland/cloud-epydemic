@@ -30,7 +30,18 @@
 # This defaults to 1, and can be set to any value to deal with
 # multicore systems.
 
-# Compute the number of engines
+# Create the profile
+ipython profile create --parallel $EPYDEMIC_PROFILE
+EPYDEMIC_PROFILE_DIR=`ipython profile locate $EPYDEMIC_PROFILE`
+
+# Retrieve the access tokens
+echo "`./kv $EPYDEMIC_PROFILE/ssh/id_rsa`" >.ssh/id_rsa
+chmod go-rwx .ssh/id_rsa
+echo "`./kv $EPYDEMIC_PROFILE/ssh/controller_fingerprint`" >.ssh/known_hosts
+EPYDEMIC_ENGINE_JSON=$EPYDEMIC_PROFILE_DIR/security/ipcontroller-engine.json
+echo "`./kv $EPYDEMIC_PROFILE/ipyparallel/engine_json`" >$EPYDEMIC_ENGINE_JSON
+
+# Determine the number of engines
 ENGINES=${EPYDEMIC_ENGINES:-1}
 
 # Start the engine
