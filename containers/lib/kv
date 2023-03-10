@@ -19,6 +19,12 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+# We need a blocking Redis client so that containers can use
+# the availability of the Redis server, and of the key/value
+# pairs within it, to implement dependencies. This is more
+# portable than trying to use dependencies within a particular
+# container infrastructure, not all of which provide this service.
+
 import os
 import sys
 import time
