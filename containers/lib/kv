@@ -50,6 +50,8 @@ for arg in sys.argv[1:]:
         v = None
         while v is None:
             v = r.get(arg)
+            if v is None:
+                time.sleep(5)
 
         # print it as a string
         print(v.decode())
