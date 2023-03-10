@@ -45,14 +45,17 @@ CHDIR = cd
 
 # ---------- Targets ----------
 
+# The build context for the Dockerfiles is this directory, to
+# allow access to files in lib/
+
 build:
 	for c in $(CONTAINERS); do \
-	  ($(CHDIR) $$c && $(DOCKER_BUILD) --tag $(REPO)/$$c . || exit 1) \
+	  ($(DOCKER_BUILD) -f $$c/Dockerfile --tag $(REPO_USER)/$$c . || exit 1) \
 	done
 
 build-clean:
 	for c in $(CONTAINERS); do \
-	  ($(CHDIR) $$c && $(DOCKER_BUILD_CLEAN) --tag $(REPO)/$$c . || exit 1) \
+	  ($(DOCKER_BUILD_CLEAN) -f $$c/Dockerfile --tag $(REPO_USER)/$$c . || exit 1) \
 	done
 
 push-dockerhub:
