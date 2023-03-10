@@ -43,7 +43,7 @@ apt update
 apt-get install -y hdf5-tools
 apt-get install -y ca-certificates locales fonts-liberation openssh-client
 EOF
-#RUN echo "en_US.UTF-8 en_GB.UTF-8 UTF-8" >/etc/locale.gen && locale-gen
+RUN echo "en_US.UTF-8 en_GB.UTF-8 UTF-8" >/etc/locale.gen && locale-gen
 
 # Add a user
 ENV EPYDEMIC_USER="$EPYDEMIC_USER"
