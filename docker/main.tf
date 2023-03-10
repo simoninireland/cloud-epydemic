@@ -48,6 +48,11 @@ resource "docker_image" "engine" {
   keep_locally = true
 }
 
+resource "docker_image" "redis" {
+  name = "redis:latest"
+  keep_locally = true
+}
+
 
 # ---------- Network ----------
 
@@ -59,36 +64,18 @@ resource "docker_network" "cluster_bridge" {
 
 # ---------- Storage ----------
 
-resource "docker_volume" "shared" {
-}
-
 resource "docker_volume" "data" {
 }
 
 
 # ---------- Containers ----------
 
-resource "docker_container" "cluster_frontend" {
-  image = docker_image.notebook.image_id
-  name  = "cluster_frontend"
-  depends_on = [
-    docker_container.cluster_controller,
-    docker_container.cluster_engine,
-  ]
-  # env = [
-  #   "EPYDEMIC_PASSWORD=secret"
-  # ]
+resource "docker_container" "cluster_authentication" {
+  image = docker_image.redis.image_id
+  name = "cluster_authentication"
+  hostname = "cluster_authentication"
   networks_advanced {
     name = docker_network.cluster_bridge.id
-  }
-  mounts {
-    type = "volume"
-    target = "/home/epydemic/shared"
-    source = docker_volume.shared.id
-  }
-  ports {
-    internal = 8888
-    external = 8888
   }
 }
 
@@ -96,16 +83,14 @@ resource "docker_container" "cluster_controller" {
   image = docker_image.controller.image_id
   name = "cluster_controller"
   hostname = "cluster_controller"
+
   env = [
-    "EPYDEMIC_CONTROLLER_HOST=cluster_controller"
+    "EPYDEMIC_CONTROLLER_HOST=cluster_controller",
+    "EPYDEMIC_AUTHENTICATION_HOST=cluster_authentication",
   ]
+
   networks_advanced {
     name = docker_network.cluster_bridge.id
-  }
-  mounts {
-    type = "volume"
-    target = "/home/epydemic/shared"
-    source = docker_volume.shared.id
   }
 }
 
@@ -113,16 +98,38 @@ resource "docker_container" "cluster_engine" {
   count = 3
   image = docker_image.engine.image_id
   name = "cluster_engine_${count.index}"
-  depends_on = [ docker_container.cluster_controller ]
   hostname = "cluster_engine"
-  env = [ "EPYDEMIC_ENGINES=4" ]
+
+  env = [
+    "EPYDEMIC_AUTHENTICATION_HOST=cluster_authentication",
+    "EPYDEMIC_ENGINES=4",
+  ]
+
+  networks_advanced {
+    name = docker_network.cluster_bridge.id
+  }
+}
+
+resource "docker_container" "cluster_frontend" {
+  image = docker_image.notebook.image_id
+  name  = "cluster_frontend"
+
+  env = [
+    "EPYDEMIC_AUTHENTICATION_HOST=cluster_authentication",
+    # "EPYDEMIC_PASSWORD=secret"
+  ]
+
   networks_advanced {
     name = docker_network.cluster_bridge.id
   }
   mounts {
     type = "volume"
-    target = "/home/epydemic/shared"
-    source = docker_volume.shared.id
+    target = "/home/epydemic/data"
+    source = docker_volume.data.id
+  }
+  ports {
+    internal = 8888
+    external = 8888
   }
 }
 
@@ -143,10 +150,5 @@ resource "docker_container" "cluster_bastion" {
   tty = true
   networks_advanced {
     name = docker_network.cluster_bridge.id
-  }
-  mounts {
-    type = "volume"
-    target = "/home/epydemic/shared"
-    source = docker_volume.shared.id
   }
 }
