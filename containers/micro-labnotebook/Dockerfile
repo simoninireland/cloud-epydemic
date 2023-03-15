@@ -31,6 +31,7 @@ LABEL maintainer="Simon Dobson <simon.dobson@st-andrews.ac.uk>"
 
 # Build-time arguments to configure the cluster
 ARG EPYDEMIC_USER="epydemic"
+ARG EPYDEMIC_LABNOTEBOOK_NAME="micro-labnotebook.json"
 
 # Install the HDF5 libraries needed by epyc
 USER root
@@ -46,18 +47,25 @@ RUN useradd -m -d $EPYDEMIC_HOME -s /bin/bash $EPYDEMIC_USER
 
 # Install the additional Python dependencies
 WORKDIR $EPYDEMIC_HOME
-COPY micro-engine/requirements.txt .
+COPY micro-labnotebook/requirements.txt .
 RUN pip install --upgrade pip wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install the API server
-COPY micro-engine/micro_labnotebook/ ./micro_labnotebook/
+COPY micro-labnotebook/micro_labnotebook/ ./micro_labnotebook/
 RUN chown -R $EPYDEMIC_USER ./micro_labnotebook
-COPY micro-engine/start.sh .
+COPY micro-labnotebook/start.sh .
 RUN chown $EPYDEMIC_USER ./start.sh
 RUN chmod u+x ./start.sh
-COPY micro-engine/start_labnotebook.py .
+COPY micro-labnotebook/start_labnotebook.py .
 RUN chown $EPYDEMIC_USER ./start_labnotebook.py
+
+# Create a mount point for the lab notebook
+ENV EPYDEMIC_HOME=$EPYDEMIC_HOME
+ENV EPYDEMIC_DATA="$EPYDEMIC_HOME/data"
+ENV EPYDEMIC_LABNOTEBOOK_NAME=$EPYDEMIC_LABNOTEBOOK_NAME
+RUN mkdir $EPYDEMIC_DATA
+RUN chown $EPYDEMIC_USER $EPYDEMIC_DATA
 
 # Expose the http and https ports
 EXPOSE 80

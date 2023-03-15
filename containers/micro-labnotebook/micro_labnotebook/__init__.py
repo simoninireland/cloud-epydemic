@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+import os
 import connexion
 from epyc import JSONLabNotebook
 
@@ -34,5 +35,8 @@ def hello():
     '''Default endpoint just to check that the server is responding.'''
     return "cloud-epydemic lab notebook microservice is running."
 
-# Create lab notebook -- currently not persistent
-nb = JSONLabNotebook(name="test.json")
+# Create lab notebook in the appropriate data directory
+dir = os.environ.get("EPYDEMIC_DATA", f"{home}/data")
+name = os.environ.get("EPYDEMIC_LABNOTEBOOK_NAME", "micro-labnotebook.json")
+fn = f"{dir}/{name}"
+nb = JSONLabNotebook(name=fn)
