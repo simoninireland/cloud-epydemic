@@ -20,10 +20,12 @@
 # ---------- Sources ----------
 
 # The containers
-CONTAINERS = \
+ CONTAINERS = \
 	base-notebook \
 	controller \
-	base-engine
+	base-engine \
+	micro-engine \
+	micro-labnotebook
 
 # The container repository user
 REPO_USER = simoninireland
@@ -37,11 +39,19 @@ include ./credentials.sh
 # ---------- Tools ----------
 
 DOCKER = docker
+DOCTL = doctl
+MINIKUBE = minikube
+CHDIR = cd
+
+
+# ---------- Constructed commands ----------
+
 DOCKER_BUILD = $(DOCKER) buildx build
 DOCKER_BUILD_CLEAN = $(DOCKER) buildx build --pull --no-cache
+DOCKER_RM = docker image rm
 DOCKER_PUSH = $(DOCKER) push
-DOCTL = doctl
-CHDIR = cd
+DOCKER_CLEAN = $(DOCKER) buildx prune -f
+MINIKUBE_PUSH = $(MINIKUBE) image load
 
 
 # ---------- Targets ----------
@@ -49,32 +59,51 @@ CHDIR = cd
 # The build context for the Dockerfiles is this directory, to
 # allow access to files in lib/
 
-build:
-	for c in $(CONTAINERS); do \
-	  ($(DOCKER_BUILD) -f $$c/Dockerfile --tag $(REPO_USER)/$$c . || exit 1) \
-	done
+.PHONY: $(CONTAINERS)
+build: $(CONTAINERS)
 
-build-clean:
-	for c in $(CONTAINERS); do \
-	  ($(DOCKER_BUILD_CLEAN) -f $$c/Dockerfile --tag $(REPO_USER)/$$c . || exit 1) \
-	done
+controller:
+	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
+
+base-engine:
+	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
+
+base-notebook:
+	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
+
+micro-engine:
+	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
+
+micro-labnotebook:
+	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
 
 push-dockerhub:
 	for c in $(CONTAINERS); do \
-	  ($(DOCKER_PUSH) $(REPO_USER)/$$c || exit 1) \
+	  $(DOCKER_PUSH) $(REPO_USER)/$$c; \
+	done
+
+push-minikube:
+	for c in $(CONTAINERS); do \
+	  $(MINIKUBE_PUSH) $(REPO_USER)/$$c; \
 	done
 
 push-oci:
 	echo $(OCI_PASSWORD) | $(DOCKER) login $(OCI_REGION).ocir.io -u $(OCI_USERNAME) --password-stdin
 	for c in $(CONTAINERS); do \
-	  ($(DOCKER) tag $(REPO_USER)/$$c $(OCI_REGION).ocir.io/$(OCI_OBJECT_STORAGE_NAMESPACE)/$$c || exit 1); \
-	  ($(DOCKER_PUSH) $(OCI_REGION).ocir.io/$(OCI_OBJECT_STORAGE_NAMESPACE)/$$c || exit 1) \
+	  $(DOCKER) tag $(REPO_USER)/$$c $(OCI_REGION).ocir.io/$(OCI_OBJECT_STORAGE_NAMESPACE)/$$c; \
+	  $(DOCKER_PUSH) $(OCI_REGION).ocir.io/$(OCI_OBJECT_STORAGE_NAMESPACE)/$$c; \
 	done
 
 push-digitalocean:
 	$(DOCTL) auth init -t $(DO_TOKEN)
 	$(DOCTL) registry login
 	for c in $(CONTAINERS); do \
-	  ($(DOCKER) tag $(REPO_USER)/$$c registry.digitalocean.com/$(DO_REGISTRY)/$$c || exit 1); \
-	  ($(DOCKER_PUSH) registry.digitalocean.com/$(DO_REGISTRY)/$$c || exit 1) \
+	  $(DOCKER) tag $(REPO_USER)/$$c registry.digitalocean.com/$(DO_REGISTRY)/$$c; \
+	  $(DOCKER_PUSH) registry.digitalocean.com/$(DO_REGISTRY)/$$c; \
 	done
+
+reallyclean:
+	for c in $(CONTAINERS); do \
+	  $(DOCKER_RM) $(REPO_USER)/$$c; \
+	done
+	$(DOCKER_CLEAN)

@@ -1,0 +1,9 @@
+epydemic >= 1.12
+epydemic_signals
+python-dotenv
+gunicorn
+Flask
+flask-migrate
+flask-login
+flask-httpauth
+requests

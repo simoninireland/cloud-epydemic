@@ -1,0 +1,8 @@
+pylint
+rope
+flake8
+jedi
+jedi-language-server
+mypy
+flask-unittest
+httpie
