@@ -3,7 +3,5 @@ epydemic_signals
 python-dotenv
 gunicorn
 Flask
-flask-migrate
-flask-login
-flask-httpauth
+connexion[swagger-ui]
 requests
