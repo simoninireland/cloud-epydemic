@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: micro-engine
+  labels:
+    app: cluster
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: engine
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: cluster
+        component: engine
+    spec:
+      containers:
+      - name: micro-engine
+        image: simoninireland/micro-engine:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: micro-engine-service
+  labels:
+    app: cluster
+    component: micro-engine-service
+spec:
+  type: NodePort
+  ports:
+    - port: 5000
+      nodePort: 30001
+      protocol: TCP
+  selector:
+    app: cluster
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lab-notebook
+  labels:
+    app: cluster
+    component: lab-notebook
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 128M
