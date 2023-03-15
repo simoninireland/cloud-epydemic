@@ -37,6 +37,21 @@ components:
         _experiment_:
           type: "string"
 
+    ResultsDict:
+      description: "A results dict"
+      type: "object"
+      required:
+        - "parameters"
+        - "metadata"
+        - "results"
+      properties:
+        parameters:
+          type: "object"
+        metadata:
+          type: "object"
+        results:
+          type: "object"
+
 paths:
   /runExperiment:
     post:
@@ -55,5 +70,9 @@ paths:
       responses:
         200:
           description: "Experiment executed"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultsDict"
         400:
           description: "Badly-formed experiment request"
