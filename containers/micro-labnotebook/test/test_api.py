@@ -17,26 +17,22 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-import json
-import base64
-import pickle
-import cloudpickle
 from flask_unittest import ClientTestCase
-import micro_engine
-from epyc import Experiment
+import micro_labnotebook
+from epyc import Experiment, LabNotebook
 from epydemic import StochasticDynamics, SIR, ERNetwork
 
 class TestAPI(ClientTestCase):
 
-    app = micro_engine.app
+    app = micro_labnotebook.app
 
     def testUp(self, client):
         '''Test we can hit the default endpoint.'''
         res = client.get('/')
         self.assertStatus(res, 200)
 
-    def testExperiment(self, client):
-        '''Test we can submit an experiment and have it run successfully.'''
+    def testAddResults(self, client):
+        '''Test we can add results.'''
 
         # a simple parameter set, above the epidemic threshold
         params = dict()
@@ -50,22 +46,13 @@ class TestAPI(ClientTestCase):
         model = SIR()
         e = StochasticDynamics(model, ERNetwork())
 
-        # pickle the experiment and add to the parameters
-        encoded = base64.b64encode(cloudpickle.dumps(e)).decode('ascii')
-        params['_experiment_'] = encoded
+        # run the experiment
+        rc = e.set(params).run()
 
-        # make the request
-        args = json.dumps(params)
-        res = client.post('/api/v1/run', json=args)
+        # submit the results
+        args = dict(
+            resultset=LabNotebook.DEFAULT_RESULTSET,
+            results=rc
+        )
+        res = client.post('/api/v1/addResult', json=args)
         self.assertStatus(res, 200)
-
-        # check we got a valid results dict back
-        rc = res.json
-        self.assertIn(Experiment.PARAMETERS, rc)
-        self.assertIn(Experiment.RESULTS, rc)
-        self.assertIn(Experiment.METADATA, rc)
-
-        # check for plausible experimental results
-        # (we can't assume that an outbreak occurred)
-        self.assertTrue(rc[Experiment.RESULTS][SIR.INFECTED] == 0)
-        self.assertTrue(rc[Experiment.RESULTS][SIR.REMOVED] >= 0)

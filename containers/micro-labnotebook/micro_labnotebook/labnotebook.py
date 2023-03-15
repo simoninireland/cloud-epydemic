@@ -1,4 +1,4 @@
-# Flask server initialisation
+# Services exported from lab notebooks
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -17,22 +17,27 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-import connexion
-from epyc import JSONLabNotebook
+import micro_labnotebook
 
 
-# Application object
-conn = connexion.App(__name__, specification_dir='./')
-app = conn.app
+def addResultSet(rsdesc):
+    '''Add a new result set to the notebook.
 
-# Add APIs
-conn.add_api('api.yaml')
+    @param rsdesc: a dict with tag and (optional) description'''
+    tag = rsdesc['tag']
+    desc = rsdesc.get('description', None)
 
-# Checking endpoint (not part of the defined API)
-@conn.route('/')
-def hello():
-    '''Default endpoint just to check that the server is responding.'''
-    return "cloud-epydemic lab notebook microservice is running."
+    # add the new results set
+    micro_labnotebook.nb.addResultSet(tag, description=desc)
+    return dict()
 
-# Create lab notebook -- currently not persistent
-nb = JSONLabNotebook(name="test.json")
+def addResult(rsrc):
+    '''Add a results dict to a specific results set.
+
+    @param rsrc: a dict with a results dict and optional result set name'''
+    rc = rsrc['results']
+    rs = rsrc.get('resultset', None)
+
+    # add the results to the lab notebook
+    micro_labnotebook.nb.addResult(rc, tag=rs)
+    return dict()
