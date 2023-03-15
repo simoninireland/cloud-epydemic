@@ -57,3 +57,32 @@ spec:
   resources:
     requests:
       storage: 128M
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: micro-labnotebook
+  labels:
+    app: cluster
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: labnotebook
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: cluster
+        component: labnotebook
+    spec:
+      containers:
+      - name: micro-labnotebook
+        image: simoninireland/micro-labnotebook:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
