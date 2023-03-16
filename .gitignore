@@ -114,6 +114,9 @@ TAGS
 # Sphinx build docs
 doc/_build/
 
+# nohup results
+nohup.out
+
 # Terraform state and confidential variables
 .terraform/
 .terraform*
