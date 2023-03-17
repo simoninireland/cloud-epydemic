@@ -17,6 +17,17 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+# ---------- Sources ----------
+
+CLUSTER_YAML = cloud-epydemic.yaml
+
+
+# ---------- Resources----------
+
+# RabbitMQ operator
+RABBITMQ_OPERATOR = https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml
+
+
 # ---------- Tools ----------
 
 MINIKUBE = minikube
@@ -25,11 +36,18 @@ KUBECTL = kubectl
 
 # ---------- Targets ----------
 
-.PHONY: minikube
-minikube:
+.PHONY: start
+start: env
 	$(MINIKUBE) start
 	$(MINIKUBE) addons enable metrics-server
 	nohup $(MINIKUBE) dashboard &
 
 .PHONY: stop
+start:
 	$(MINIKUBE) stop
+
+deploy: env
+	$(KUBECTL) apply -f $(CLUSTER_YAML)
+
+env:
+	$(KUBECTL) apply -f  $(RABBITMQ_OPERATOR)
