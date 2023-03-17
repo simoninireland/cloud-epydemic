@@ -20,12 +20,9 @@
 # ---------- Sources ----------
 
 # The containers
- CONTAINERS = \
-	base-notebook \
-	controller \
-	base-engine \
+CONTAINERS = \
 	micro-engine \
-	micro-labnotebook
+	micro-engine-rabbitmq-shim
 
 # The container repository user
 REPO_USER = simoninireland
