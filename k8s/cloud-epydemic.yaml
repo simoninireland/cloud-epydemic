@@ -64,46 +64,27 @@ spec:
   selector:
     app: cluster
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
 metadata:
-  name: lab-notebook
-  labels:
-    app: cluster
-    component: lab-notebook
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: standard
-  resources:
-    requests:
-      storage: 128M
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: micro-labnotebook
-  labels:
-    app: cluster
+  name: message-broker
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      component: labnotebook
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
-  template:
-    metadata:
-      labels:
-        app: cluster
-        component: labnotebook
-    spec:
-      containers:
-      - name: micro-labnotebook
-        image: simoninireland/micro-labnotebook:latest
-        imagePullPolicy: Never
-        ports:
-        - containerPort: 5000
+  resources:
+    requests:
+      cpu: 1
+      memory: 256M
+    limits:
+      cpu: 1
+      memory: 1Gi
+  rabbitmq:
+    additionalConfig: |
+      cluster_partition_handling = pause_minority
+      vm_memory_high_watermark_paging_ratio = 0.99
+      disk_free_limit.relative = 1.0
+      collect_statistics_interval = 10000
+  persistence:
+    storageClassName: standard
+    storage: "50M"
+  service:
+    type: NodePort
