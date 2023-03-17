@@ -1,7 +1,0 @@
-epydemic >= 1.12
-epydemic_signals
-python-dotenv
-gunicorn
-Flask
-connexion[swagger-ui]
-requests
