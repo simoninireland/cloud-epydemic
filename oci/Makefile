@@ -1,4 +1,4 @@
-# Makefile for compute cluster on OCI
+# Makefile to create a Kubernetes compute cluster on OCI
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -20,11 +20,22 @@
 # ---------- Sources ----------
 
 TERRAFORM_SRC = \
-	main.tf \
-	platform.tf \
-	variables.tf
+	provider.tf \
+	variables.tf \
+	compartment.tf \
+	availability-domains.tf \
+	vcn-module.tf \
+	private-subnet.tf \
+	privare-security-list.tf \
+	public-subnet.tf \
+	public-security-list.tf \
+	node-pool.tf \
+	cluster.tf \
+	outputs.tf
 
-VARIABLES = credentials.tfvars
+VARIABLES = \
+	credentials.tfvars \
+	kubernetes.tfvars
 
 
 # ---------- Tools ----------
