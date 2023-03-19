@@ -1,8 +1,13 @@
 oci: Simulation setup on Oracle Cloud Infrastructure
 ====================================================
 
-These ``terraform`` scripts set up a compute cluster with notebook
-front-end on Oracle Cloud Infrastructure (OCI).
+``terraform`` scripts to set up a Kubernetes compute cluster
+on Oracle Cloud Infrastructure (OCI).
+
+Much of the structure of these files comes from the
+`Oracle Terraform tutorials
+<https://docs.oracle.com/en-us/iaas/developer-tutorials/tutorials/tf-provider/01-summary.htm>`_,
+modified as required by ``cloudepydemic``.
 
 
 Variables
@@ -22,8 +27,6 @@ quoted strings:
 | tenancy_ocid      | OCID of the tenancy                      |                |
 +-------------------+------------------------------------------+----------------+
 | oci_region        | The region hosting the tenancy           | uk-london-1    |
-+-------------------+------------------------------------------+----------------+
-| compartment_ocid  | OCID of the compartment for the cluster  |                |
 +-------------------+------------------------------------------+----------------+
 | user_ocid         | OCID of the user running the cluster     |                |
 +-------------------+------------------------------------------+----------------+
