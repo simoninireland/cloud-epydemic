@@ -27,11 +27,6 @@ variable "oci_region" {
   type = string
 }
 
-variable "compartment_ocid" {
-  description = "Compartment ID"
-  type = string
-}
-
 variable "user_ocid" {
   description = "User ID"
   type = string
@@ -50,4 +45,19 @@ variable "private_key_path" {
 variable "home_address_cidr" {
   description = "Network mask from which connections are allowed"
   type = string
+}
+
+variable "worker_node_shape" {
+  description = "Machine shape for Kubernetes worker node"
+  type = string
+}
+
+variable "worker_node_image_ocid" {
+  description = "OCID of machine image for Kubernetes worker node"
+  type = string
+}
+
+variable "worker_node_pool_size" {
+  description = "Size of Kubernetes worker node pool"
+  type = int
 }
