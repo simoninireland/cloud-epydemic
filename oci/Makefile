@@ -19,7 +19,7 @@
 
 # ---------- Sources ----------
 
-TERRAFORM_SRC = \
+SOURCES = \
 	provider.tf \
 	variables.tf \
 	compartment.tf \
