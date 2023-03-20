@@ -19,7 +19,7 @@ version controlled.
 
 To create this file, copy ``credentials.example`` to
 ``credentials.tfvars`` and fill-in the variables, all of which are
-quoted strings:
+quoted strings. None of these values have defaults, so all must be supplied.
 
 +-------------------+------------------------------------------+----------------+
 | Variable          | Description                              | Example        |
@@ -34,5 +34,30 @@ quoted strings:
 +-------------------+------------------------------------------+----------------+
 | private_key_path  | Local path to private key in PEM format  | ~/.oci/key.pem |
 +-------------------+------------------------------------------+----------------+
-| home_address_cidr | Address block to accept connections from | 12.34.0.0/16   |
-+-------------------+-------------------------------------------+---------------+
+
+There are also some variables needed to configure Kubernetes. Again,
+there is a file ``kubernetes.example`` that should be copieds to
+``kubernetes.tfvars`` and filled in. Some of the values have defaults
+to get things started; those without defaults need to be supplied.
+
++-----------------------------+------------------------------------------+----------------+
+| Variable                    | Description                              | Default        |
++=============================+==========================================+================+
++ k8s_version                 | Kubernetes version                       |                |
++-----------------------------+------------------------------------------+----------------+
++ k8s_worker_node_shape       | Compute shape for a worker node          |                |
++-----------------------------+------------------------------------------+----------------+
++ k8s_worker_node_image_ocid  | OCID for worker node OS image            |                |
++-----------------------------+------------------------------------------+----------------+
++ k8s_worker_node_pool_size   | Number of workers in the pool            | 3              |
++-----------------------------+------------------------------------------+----------------+
++ k8s_worker_node_memory      | Memory per worker node, in GBs           | 1              |
++-----------------------------+------------------------------------------+----------------+
++ k8s_worker_node_cpus        | Virtual CPUs per worker node             | 2              |
++-----------------------------+------------------------------------------+----------------+
+
+Note that there is an important relationship between ``k8s_version``
+and ``k8s_worker_node_image_ocid``. The version of Kubernetes in the
+worker node image needs to be compatible with the chosen Kubernetes
+version used for the cluster and node pool. Generally the image name
+includes the version number it uses.

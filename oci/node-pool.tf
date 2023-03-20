@@ -20,15 +20,19 @@
 resource "oci_containerengine_node_pool" "oke-node-pool" {
   cluster_id = oci_containerengine_cluster.oke-cluster.id
   compartment_id = oci_identity_compartment.tf-compartment.id
-  kubernetes_version = "v1.21.5"
-  name = "pool1"
+  #kubernetes_version =  data.oci_containerengine_cluster_option.OKE_cluster_option.kubernetes_versions.0
+  kubernetes_version = var.k8s_version
+  name = var.k8s_worker_node_pool_name
 
-  node_shape = var.worker_node_shape
+  node_shape = var.k8s_worker_node_shape
   node_source_details {
-    image_id = var.worker_node_image_ocid
+    image_id = var.k8s_worker_node_image_ocid
     source_type = "image"
   }
-
+  node_shape_config {
+    memory_in_gbs = var.k8s_worker_node_memory
+    ocpus = var.k8s_worker_node_cpus
+  }
   node_config_details{
     placement_configs{
       availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
@@ -42,11 +46,11 @@ resource "oci_containerengine_node_pool" "oke-node-pool" {
       availability_domain = data.oci_identity_availability_domains.ads.availability_domains[2].name
       subnet_id = oci_core_subnet.vcn-private-subnet.id
     }
-    size = var.worker_node_pool_size
+    size = var.k8s_worker_node_pool_size
   }
 
-  initial_node_labels {
-    key = "name"
-    value = "cloudepydemic"
-  }
+  # initial_node_labels {
+  #   key = "name"
+  #   value = "cloudepydemic"
+  # }
 }

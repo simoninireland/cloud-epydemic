@@ -19,19 +19,23 @@
 
 resource "oci_containerengine_cluster" "oke-cluster" {
   compartment_id = oci_identity_compartment.tf-compartment.id
-  kubernetes_version = "v1.25.4"
+  #kubernetes_version = data.oci_containerengine_cluster_option.OKE_cluster_option.kubernetes_versions.0
+  kubernetes_version = var.k8s_version
+
   name = "cloudepydemic"
   vcn_id = module.vcn.vcn_id
 
   options {
-    add_ons{
-      is_kubernetes_dashboard_enabled = false
-      is_tiller_enabled = false
-    }
-    kubernetes_network_config {
-      pods_cidr = "10.244.0.0/16"
-      services_cidr = "10.96.0.0/16"
-    }
+    # add_ons{
+    #   is_kubernetes_dashboard_enabled = false
+    #   is_tiller_enabled = false
+    # }
+    # kubernetes_network_config {
+    #   #pods_cidr = "10.244.0.0/16"
+    #   #services_cidr = "10.96.0.0/16"
+    #   pods_cidr = oci_core_subnet.vcn-private-subnet.cidr_block
+    #   services_cidr = oci_core_subnet.vcn-public-subnet.cidr_block
+    # }
     service_lb_subnet_ids = [oci_core_subnet.vcn-public-subnet.id]
   }
 }

@@ -119,40 +119,40 @@ output "public-subnet-OCID" {
 
 # ---------- Kubernetes cluster ----------
 
-output "cluster-name" {
+output "k8s-cluster-name" {
   value = oci_containerengine_cluster.oke-cluster.name
 }
 
-output "cluster-OCID" {
+output "k8s-cluster-ocid" {
   value = oci_containerengine_cluster.oke-cluster.id
 }
 
-output "cluster-kubernetes-version" {
+output "k8s-cluster-kubernetes-version" {
   value = oci_containerengine_cluster.oke-cluster.kubernetes_version
 }
 
-output "cluster-state" {
+output "k8s-cluster-state" {
   value = oci_containerengine_cluster.oke-cluster.state
 }
 
 # ---------- Kubernetes node pool ----------
 
-output "node-pool-name" {
+output "k8s-node-pool-name" {
   value = oci_containerengine_node_pool.oke-node-pool.name
 }
 
-output "node-pool-OCID" {
+output "k8s-node-pool-ocid" {
   value = oci_containerengine_node_pool.oke-node-pool.id
 }
 
-output "node-pool-kubernetes-version" {
+output "k8s-version" {
   value = oci_containerengine_node_pool.oke-node-pool.kubernetes_version
 }
 
-output "node-size" {
+output "k8s-worker-node-size" {
   value = oci_containerengine_node_pool.oke-node-pool.node_config_details[0].size
 }
 
-output "node-shape" {
+output "k8s-worker-node-shape" {
   value = oci_containerengine_node_pool.oke-node-pool.node_shape
 }

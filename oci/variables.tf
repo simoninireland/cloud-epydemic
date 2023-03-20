@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+# ---------- OCI credentials (credentials.tfvars) ----------
+
 variable "tenancy_ocid" {
   description = "Tenancy ID"
   type = string
@@ -42,22 +44,52 @@ variable "private_key_path" {
   sensitive = true
 }
 
-variable "home_address_cidr" {
-  description = "Network mask from which connections are allowed"
+
+# ---------- Kubernetes configuration (kubernetes.tfvars) ----------
+
+variable "k8s_version" {
+  description = "Kubernetes version (must match worker node images)"
   type = string
 }
 
-variable "worker_node_shape" {
+variable "k8s_worker_node_shape" {
   description = "Machine shape for Kubernetes worker node"
   type = string
 }
 
-variable "worker_node_image_ocid" {
+variable "k8s_worker_node_image_ocid" {
   description = "OCID of machine image for Kubernetes worker node"
   type = string
 }
 
-variable "worker_node_pool_size" {
+# All k8s_* variables below this have defaults
+
+variable "k8s_worker_node_image_name" {
+  description = "Name of machine image for Kubernetes worker node (for documentation)"
+  type = string
+  default = "<unknown>"
+}
+
+variable "k8s_worker_node_pool_name" {
+  description = "Name of Kubernetes worker node pool"
+  type = string
+  default = "pool1"
+}
+
+variable "k8s_worker_node_pool_size" {
   description = "Size of Kubernetes worker node pool"
-  type = int
+  type = number
+  default = 3
+}
+
+variable "k8s_worker_node_memory" {
+  description = "Memory for a woreker node in GBs"
+  type = number
+  default = 2
+}
+
+variable "k8s_worker_node_cpus" {
+  description = "Number of virtual CPUs for a woreker node"
+  type = number
+  default = 2
 }

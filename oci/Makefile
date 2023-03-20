@@ -23,7 +23,7 @@ SOURCES = \
 	provider.tf \
 	variables.tf \
 	compartment.tf \
-	availability-domains.tf \
+	datasources.tf \
 	vcn-module.tf \
 	private-subnet.tf \
 	privare-security-list.tf \
