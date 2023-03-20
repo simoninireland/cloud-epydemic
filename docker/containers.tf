@@ -1,4 +1,4 @@
-# Terraform script to create a compute cluster locally using Docker
+# Containers for local Docker deployment
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -16,59 +16,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
-
-# ---------- Docker provider ----------
-
-terraform {
-  required_providers {
-    docker = {
-      source = "kreuzwerker/docker"
-      version = "~> 3.0.1"
-    }
-  }
-}
-
-provider "docker" {}
-
-
-# ---------- Container images ----------
-
-resource "docker_image" "notebook" {
-  name = "simoninireland/base-notebook:latest"
-  keep_locally = true
-}
-
-resource "docker_image" "controller" {
-  name = "simoninireland/controller:latest"
-  keep_locally = true
-}
-
-resource "docker_image" "engine" {
-  name = "simoninireland/base-engine:latest"
-  keep_locally = true
-}
-
-resource "docker_image" "redis" {
-  name = "redis:latest"
-  keep_locally = true
-}
-
-
-# ---------- Network ----------
-
-resource "docker_network" "cluster_bridge" {
-  name = "cluster_bridge"
-  driver = "bridge"
-}
-
-
-# ---------- Storage ----------
-
-resource "docker_volume" "data" {
-}
-
-
-# ---------- Containers ----------
 
 resource "docker_container" "cluster_authentication" {
   image = docker_image.redis.image_id
@@ -130,25 +77,5 @@ resource "docker_container" "cluster_frontend" {
   ports {
     internal = 8888
     external = 8888
-  }
-}
-
-
-# ---------- Debugging ----------
-
-resource "docker_image" "bastion" {
-  name = "alpine:latest"
-  keep_locally = true
-}
-
-resource "docker_container" "cluster_bastion" {
-  image = docker_image.bastion.image_id
-  name= "cluster_bastion"
-  depends_on = [ docker_container.cluster_controller ]
-  hostname = "cluster_bastion"
-  stdin_open = true
-  tty = true
-  networks_advanced {
-    name = docker_network.cluster_bridge.id
   }
 }
