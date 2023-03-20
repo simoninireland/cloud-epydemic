@@ -24,7 +24,9 @@ TERRAFORM_SRC = \
 	platform.tf \
 	variables.tf
 
-VARIABLES = credentials.tfvars
+VARIABLES = \
+	credentials.tfvars \
+	kubernetes.tfvars
 
 
 # ---------- Tools ----------
@@ -34,10 +36,18 @@ TERRAFORM_DIR = .terraform
 RM = rm -fr
 
 
+# ---------- Constructed lists ----------
+
+TERRAFORM_VARIABLES = $(patsubst %.tfvars,--var-file=%.tfvars,$(VARIABLES))
+
+
 # ---------- Targets ----------
 
 up: env
-	$(TERRAFORM) apply -var-file=$(VARIABLES) -auto-approve
+	$(TERRAFORM) apply $(TERRAFORM_VARIABLES) -auto-approve
+
+down: env
+	$(TERRAFORM) destroy $(TERRAFORM_VARIABLES) -auto-approve
 
 down: env
 	$(TERRAFORM) destroy -var-file=$(VARIABLES) -auto-approve

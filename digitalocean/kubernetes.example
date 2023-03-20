@@ -1,4 +1,4 @@
-# Basic set-up of compute cluster on Digital Ocean
+# Terraform variables to provide Kubernetes set-up for Digital Ocean
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -17,21 +17,4 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-# ---------- Provider ----------
-
-terraform {
-  required_providers {
-    digitalocean = {
-      source = "digitalocean/digitalocean"
-      version = "~> 2.0"
-    }
-  }
-}
-
-provider "digitalocean" {
-  token = var.access_token
-}
-
-data "digitalocean_ssh_key" "cloudepydemic" {
-  name = "cloudepydemic"
-}
+# Fill in these values before deploying

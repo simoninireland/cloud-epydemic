@@ -17,14 +17,47 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-variable "access_token" {
-  description = "Digital Ocean token"
+# ---------- Digital ocean credentials (credentials.tfvars) ----------
+
+variable "digitalocean_token" {
+  description = "Digital Ocean access token"
   type = string
   sensitive = true
 }
 
-variable "private_key_file" {
+variable "digitalocean_region" {
+  type = string
+}
+
+variable "digitalocean_private_key_file" {
   description = "Digital Ocean private key file"
   type = string
   sensitive = true
+}
+
+
+# ---------- Digital ocean credentials (credentials.tfvars) ----------
+
+# All k8s_* variables below this have defaults
+
+variable "k8s_version" {
+  description = "Kubernetes version"
+  type = string
+  default = "1.25.4-do.0"
+}
+variable "k8s_application_name" {
+  description = "Kubernetes application name"
+  type = string
+  default = "geekiam"
+}
+
+variable "k8s_worker_node_pool_size" {
+  type = number
+  default = 3
+}
+
+variable "k8s_worker_node_shape" {
+  description = "Machine shape for Kubernetes worker node"
+  type = string
+  default = "s-2vcpu-2gb"
 }
