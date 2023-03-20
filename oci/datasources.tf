@@ -1,4 +1,4 @@
-# OCI availability domains
+# OCI datasources
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -17,6 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+# Availability domains
 data "oci_identity_availability_domains" "ads" {
   compartment_id = var.tenancy_ocid
+}
+
+# Kubernetes versions
+data "oci_containerengine_cluster_option" "OKE_cluster_option" {
+  cluster_option_id = "all"
 }
