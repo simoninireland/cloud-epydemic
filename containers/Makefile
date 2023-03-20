@@ -59,19 +59,10 @@ MINIKUBE_PUSH = $(MINIKUBE) image load
 .PHONY: $(CONTAINERS)
 build: $(CONTAINERS)
 
-controller:
-	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
-
-base-engine:
-	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
-
-base-notebook:
-	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
-
 micro-engine:
 	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
 
-micro-labnotebook:
+micro-engine-rabbitmq-shim:
 	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
 
 push-dockerhub:
