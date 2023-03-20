@@ -20,7 +20,10 @@
 import time
 import sys
 import logging
-from ipyparallel import Client, DirectView    # type: ignore
+import base64
+import pickle
+import pika
+import requests
 from contextlib import AbstractContextManager
 from epyc import Logger, Lab, LabNotebook, Experiment
 
@@ -30,7 +33,7 @@ logger = logging.getLogger(Logger)
 
 class CloudLab(Lab):
     """A :class:`Lab` running on a cloud-based microservices
-    compue cluster.
+    compute cluster.
 
     Experiments are submitted to engines in the cluster for execution
     in parallel, with the experiments being performed asynchronously.
@@ -44,17 +47,72 @@ class CloudLab(Lab):
 
     """
 
-    def __init__(self, url, notebook: LabNotebook = None)
+    RABBITMQ_REQUEST_CHANNEL = "request"
+    RABBITMQ_RESULT_CHANNEL = "result"
+    EXPERIMENT_KEY = "_experiment_"
+    JOBID_KEY = "_jobid_"
+
+
+    def __init__(self, url, notebook: LabNotebook = None):
         """Create an empty lab attached to the given cluster.#
 
         :param url: API endpoint
         :param notebook: the notebook used to results (defaults to an empty :class:`LabNotebook`)"""
         super().__init__(notebook)
         self._endpoint = url
+        self._jobid = 0
 
 
     # ---------- Basic API ----------
 
+    def jobid(self) -> str:
+        """Return a new unique job id.
+
+        @returns: a unique id"""
+        s = str(self._jobid)
+        self._jobid += 1
+        return s
+
+    def open(self):
+        """Open a connection to the RabbitMQ endpoint, ensuring that the
+        necessary channels exist."""
+        if self._connection is not None:
+            return
+
+        # connect to the endpoint
+        self._connection = pika.BlockingConnection(pika.ConnectionParameters(host-self._endpoint))
+        self._channel = self._connection.channel()
+
+        # ensure the queues exist
+        for ch in CloudLab.RABBITMQ_REQUEST_CHANNEL, CloudLab.RABBITMQ_RESULT_CHANNEL]:
+            self._channel.queue_declare(queue=ch)
+
+    def submitRequest(self, e, params) -> int:
+        """Submit an experiment with the given parameters.
+
+        @param e: the experiment
+        @param params: the experimental parameters
+        @returns job identifier"""
+
+        # encode the experiment object as Base64
+        encoded = base64.b64encode(cloudpickle.dumps(e)).decode('ascii')
+        params[self.EXPERIMENT_KEY] = encoded
+        j = self.jobid()
+        params[self.JOBID_KEY] = j
+        args = json.dumps(params)
+
+        # send message to the broker
+        self._channel.basic_publish(exchange='',
+                                    routing_key=self.RABBITMQ_REQUEST_CHANNEL,
+                                    body=args)
+
+        return j
+
+    def close(self):
+        """Close the connection to the RabbitMQ endpoint."""
+        self._connection.close()
+        self._connection = None
+        self._channel = None
 
 
     # ---------- Remote control of the compute engines ----------
@@ -71,8 +129,7 @@ class CloudLab(Lab):
 
         :param quiet: if True, suppresses messages (defaults to False)
         :returns: a context manager"""
-        self.open()
-        return self._client[:].sync_imports(quiet=quiet)
+        pass
 
 
     # ---------- Running experiments ----------
@@ -100,21 +157,12 @@ class CloudLab(Lab):
                 # connect to the cluster
                 self.open()
 
-                # configure a load balanced view of the cluster
-                view = self._client.load_balanced_view()
-                view.set_flags(retries=self.Retries)
-
                 # submit an experiment at each point in the parameter space to the cluster
                 try:
                     for (ep, p) in eps:
-                        rc = view.apply_async(lambda ep: ep[0].set(ep[1]).run(), (ep, p))
-                        ids = rc.msg_ids
-                        logger.info(f'Started jobs {ids}')
-                        nb.addPendingResult(p, ids[0])
-
-                        # there seems to be a race condition in submitting jobs,
-                        # whereby jobs get dropped if they're submitted too quickly
-                        time.sleep(0.01)
+                        j = self.submitRequest(ep, p)
+                        logger.info(f"Submitted job {j}")
+                        nb.addPendingResult(p, id)
                 except Exception as e:
                     logger.error(f'Exception when starting experiments: {e}')
             finally:
