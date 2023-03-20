@@ -54,15 +54,19 @@ def requestHandler(ch, message, properties, body):
     path, with the returned results dict being set as a message
     on the reesult channel.
 
-    @param ch: thechannel
+    @param ch: the channel
     @param message: the message identifier
     @param properties: message properties
     @param body: message body"""
 
     # make call to API
     endpoint = f"{engine}{RUNEXPERIMENT_API}"
-    r = requests.post(endpoint, json=body)
+    res = requests.post(endpoint, json=body)
 
+    # return the result to the result channel
+    channel.basic_publish(exchange='',
+                          routing_key=resultChannel,
+                          body=res.body)
 
 
 # Configure the message shim
