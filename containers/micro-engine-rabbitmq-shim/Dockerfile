@@ -46,13 +46,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install the API server
 COPY micro-engine-rabbitmq-shim/start_shim.py .
 RUN chown $EPYDEMIC_USER ./start_shim.py
-RUN chmod u+x ./start-shim.py
+RUN chmod u+x ./start_shim.py
 
 # Set up the runtime environment
-ENV EPYDEMIC_ENGINE_HOST
-ENV RABBITMQ_HOST
-ENV RABBITMQ_REQUEST_CHANNEL
-ENV RABBITMQ_RESULT_CHANNEL
+ENV EPYDEMIC_ENGINE_HOST="localhost"
+ENV RABBITMQ_HOST="localhost"
+ENV RABBITMQ_REQUEST_CHANNEL="request"
+ENV RABBITMQ_RESULT_CHANNEL="result"
 
 # Expose the http, https, and RabbitMQ ports
 EXPOSE 80
