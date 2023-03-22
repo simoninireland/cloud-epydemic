@@ -1,4 +1,4 @@
-#!env python
+#!/usr/bin/env python
 #
 # Start-up script for compute engine Flask-bassed web API
 #

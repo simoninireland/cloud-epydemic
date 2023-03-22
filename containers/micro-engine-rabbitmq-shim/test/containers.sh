@@ -27,7 +27,7 @@ SHIM=$REPO_USER/micro-engine-rabbitmq-shim
 BROKER=rabbitmq
 
 # Environments
-SHIM_ENV="-e EPYDEMIC_ENGINE_HOST=engine \
+SHIM_ENV="-e EPYDEMIC_ENGINE_API_ENDPOINT=http://engine:5000/api/v1 \
 	  -e RABBITMQ_HOST=broker \
 	  -e RABBITMQ_REQUEST_CHANNEL=request \
 	  -e RABBITMQ_RESULT_CHANNEL=result"
@@ -48,16 +48,13 @@ if [ "$command" == "start" ]; then
     docker network create $NETWORK
 
     # start the micro-engine service
-    echo `docker run --rm -it -d -p 5000:5000 --name engine $ENGINE` >>$PIDS
+    docker run --rm -it -d --network $NETWORK --name engine $ENGINE >>$PIDS
 
     # start the broker
-    echo `docker run --rm -it -d -p 15672:15672 -p 5672:5672 --name broker $BROKER` >>$PIDS
+    docker run --rm -it -d --network $NETWORK -p 5672:5672 --name broker $BROKER >>$PIDS
 
     # start the shim
-    echo `docker run --rm -it -d -p 6000:5672 $SHIM_ENV --name shim $SHIM` >>$PIDS
-
-    # place the containers on the network
-    cat $PIDS | xargs -n 1 docker network connect $NETWORK
+    docker run --rm -it -d --network $NETWORK $SHIM_ENV --name shim $SHIM >>$PIDS
 elif [ "$command" == "stop" ]; then
     # kill all the containers
     cat $PIDS | xargs docker container rm -f

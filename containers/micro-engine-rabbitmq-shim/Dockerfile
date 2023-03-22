@@ -26,7 +26,7 @@ ARG BASE_IMAGE="python:3.9"
 
 # Base image
 FROM $BASE_IMAGE
-LABEL description="cloud-epydemic compute engine message broken shim"
+LABEL description="cloud-epydemic compute engine message broker shim for RabbitMQ"
 LABEL maintainer="Simon Dobson <simon.dobson@st-andrews.ac.uk>"
 
 # Build-time arguments to configure the cluster
@@ -44,21 +44,22 @@ RUN pip install --upgrade pip wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install the API server
+COPY micro-engine-rabbitmq-shim/start.sh .
+RUN chown $EPYDEMIC_USER ./start.sh
+RUN chmod u+x ./start.sh
 COPY micro-engine-rabbitmq-shim/start_shim.py .
 RUN chown $EPYDEMIC_USER ./start_shim.py
-RUN chmod u+x ./start_shim.py
 
 # Set up the runtime environment
-ENV EPYDEMIC_ENGINE_HOST="localhost"
+ENV EPYDEMIC_ENGINE_API_ENDPOINT="http://localhost:5000/api/v1"
 ENV RABBITMQ_HOST="localhost"
 ENV RABBITMQ_REQUEST_CHANNEL="request"
 ENV RABBITMQ_RESULT_CHANNEL="result"
 
-# Expose the http, https, and RabbitMQ ports
-EXPOSE 80
-EXPOSE 443
-# what's the default port for RabbitMQ?
+# Expose the RabbitMQ port
+EXPOSE 5672
 
 # Run the start-up script
 USER $EPYDEMIC_USER
-ENTRYPOINT ["./start-shim.py"]
+ENTRYPOINT ["./start.sh"]
+#ENTRYPOINT ["/bin/bash"]

@@ -28,21 +28,18 @@ from epyc import Experiment
 from epydemic import StochasticDynamics, SIR, ERNetwork
 
 
-endpoint = "http://192.168.49.2:32251"
-
-
 class TestAPI(unittest.TestCase):
+    endpoint = "amqp://localhost:5672"
 
     def setUp(self):
-        self._connection = pika.BlockingConnection(pika.ConnectionParameters(host=endpoint))
+        self._connection = pika.BlockingConnection(pika.URLParameters(self.endpoint))
         self._channel = self._connection.channel()
 
         # ensure the queues exist
         for ch in ["request", "result"]:
             self._channel.queue_declare(queue=ch)
 
-
-    def testExperiment(self, client):
+    def testExperiment(self):
         '''Test we can submit an experiment and have it run successfully.'''
 
         # a simple parameter set, above the epidemic threshold
@@ -62,9 +59,25 @@ class TestAPI(unittest.TestCase):
         params['_experiment_'] = encoded
 
         # make the request
+        args = json.dumps(params)
         self._channel.basic_publish(exchange='',
                                     routing_key="request",
                                     body=args)
+
+        # read the result back
+        message, properties, body = self._channel.basic_get("result")
+        self.assertIsNotNone(message)
+
+        # check we got a valid results dict back
+        rc = json.loads(body)
+        self.assertIn(Experiment.PARAMETERS, rc)
+        self.assertIn(Experiment.RESULTS, rc)
+        self.assertIn(Experiment.METADATA, rc)
+
+        # check for plausible experimental results
+        # (we can't assume that an outbreak occurred)
+        self.assertTrue(rc[Experiment.RESULTS][SIR.INFECTED] == 0)
+        self.assertTrue(rc[Experiment.RESULTS][SIR.REMOVED] >= 0)
 
 
 if __name__ == '__main__':
