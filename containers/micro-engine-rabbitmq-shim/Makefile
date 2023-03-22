@@ -42,7 +42,7 @@ DEV_REQUIREMENTS = dev-requirements.txt
 # ---------- Constructed commands ----------
 
 ACTIVATE = . $(VENV)/bin/activate
-RUN_FLASK = FLASK_APP=$(TEST_APP_INSTANCE) FLASK_DEBUG=1 $(FLASK) run
+CONTAINERS = test/containers.sh
 RUN_TESTS = $(PYTHON) -m unittest discover -s test
 
 
@@ -55,13 +55,10 @@ $(VENV):
 	$(ACTIVATE) && pip install -U pip wheel
 	$(ACTIVATE) && pip install -r $(REQUIREMENTS) && pip install -r $(DEV_REQUIREMENTS)
 
-.PHONY: live
-live: env
-	$(ACTIVATE) && $(RUN_FLASK)
-
 .PHONY: test
 test: env
-	$(ACTIVATE) && $(RUN_TESTS)
+	$(CONTAINERS) start && sleep 5
+	$(ACTIVATE) && $(RUN_TESTS) ; $(CONTAINERS) stop
 
 .PHONY: reallyclean
 reallyclean:

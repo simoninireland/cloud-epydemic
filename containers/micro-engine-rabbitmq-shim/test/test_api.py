@@ -21,6 +21,7 @@ import json
 import base64
 import pickle
 import cloudpickle
+import time
 import unittest
 import pika
 import requests
@@ -65,11 +66,21 @@ class TestAPI(unittest.TestCase):
                                     body=args)
 
         # read the result back
-        message, properties, body = self._channel.basic_get("result")
-        self.assertIsNotNone(message)
+        # We need this loop because we need to be able to read the
+        # expected one result message. It'd be better to refactor this
+        # to use a proper event loop -- but that's then hard for termination
+        # detection, perhaps.
+        rc = None
+        for i in range(5):
+            message, properties, body = self._channel.basic_get("result")
+            if message is not None:
+                rc = json.loads(body)
+                break
+            else:
+                time.sleep(1)
+        self.assertIsNotNone(rc)
 
         # check we got a valid results dict back
-        rc = json.loads(body)
         self.assertIn(Experiment.PARAMETERS, rc)
         self.assertIn(Experiment.RESULTS, rc)
         self.assertIn(Experiment.METADATA, rc)
