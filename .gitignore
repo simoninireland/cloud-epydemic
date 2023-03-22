@@ -124,5 +124,8 @@ nohup.out
 *.tfstate.backup
 *.tfvars
 
+# PID files
+*.pids
+
 # Docker Hub and OCI credentials
 containers/credentials.sh
