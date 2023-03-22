@@ -57,8 +57,10 @@ if [ "$command" == "start" ]; then
     docker run --rm -it -d --network $NETWORK $SHIM_ENV --name shim $SHIM >>$PIDS
 elif [ "$command" == "stop" ]; then
     # kill all the containers
-    cat $PIDS | xargs docker container rm -f
-    rm -fr $PIDS
+    if [ -e $PIDS ]; then
+	cat $PIDS | xargs docker container rm -f
+	rm -fr $PIDS
+    fi
 
     # kill the network
     docker network rm -f $NETWORK
