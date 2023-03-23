@@ -30,10 +30,10 @@ import requests
 
 
 # Grab environment variables
-endpoint= os.environ["EPYDEMIC_ENGINE_API_ENDPOINT"]
-rabbitmq = os.environ["RABBITMQ_HOST"]
-requestChannel = os.environ["RABBITMQ_REQUEST_CHANNEL"]
-resultChannel = os.environ["RABBITMQ_RESULT_CHANNEL"]
+endpoint = os.environ["EPYDEMIC_ENGINE_API_ENDPOINT"]
+rabbitmq = os.environ["RABBITMQ_ENDPOINT"]
+requestQueue = os.environ["RABBITMQ_REQUEST_QUEUE"]
+resultQueue = os.environ["RABBITMQ_RESULT_QUEUE"]
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -69,10 +69,10 @@ def requestHandler(ch, method, properties, body):
     args = json.loads(body)
     res = requests.post(f"{endpoint}/runExperiment", json=args)
 
-    # post the result to the result channel
+    # post the result to the result queue
     args = json.dumps(res.json())
     channel.basic_publish(exchange='',
-                          routing_key=resultChannel,
+                          routing_key=resultQueue,
                           body=args)
 
     # acknowledge that the request has now been dealt with
@@ -86,7 +86,7 @@ logger.info(f"Connecting to RabbitMQ at {rabbitmq}")
 connection = None
 channel = None
 try:
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq))
+    connection = pika.BlockingConnection(pika.URLParameters(rabbitmq))
     channel = connection.channel()
 except Exception as e:
     logger.warning(f"Failed to connect ({e}); re-trying...")
@@ -94,12 +94,12 @@ except Exception as e:
 logger.info(f"Connected")
 
 # Ensure the channels exist
-for ch in [requestChannel, resultChannel]:
+for ch in [requestQueue, resultQueue]:
     logger.info(f"Creating queue {ch}")
     channel.queue_declare(queue=ch)
 
 # Register the callback for incoming requests
-channel.basic_consume(queue=requestChannel,
+channel.basic_consume(queue=requestQueue,
                       on_message_callback=requestHandler,
                       auto_ack=False)
 

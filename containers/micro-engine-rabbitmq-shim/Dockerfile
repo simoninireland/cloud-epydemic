@@ -52,9 +52,9 @@ RUN chown $EPYDEMIC_USER ./start_shim.py
 
 # Set up the runtime environment
 ENV EPYDEMIC_ENGINE_API_ENDPOINT="http://localhost:5000/api/v1"
-ENV RABBITMQ_HOST="localhost"
-ENV RABBITMQ_REQUEST_CHANNEL="request"
-ENV RABBITMQ_RESULT_CHANNEL="result"
+ENV RABBITMQ_ENDPOINT="amqp://localhost:5672"
+ENV RABBITMQ_REQUEST_QUEUE="request"
+ENV RABBITMQ_RESULT_QUEUE="result"
 
 # Expose the RabbitMQ port
 EXPOSE 5672

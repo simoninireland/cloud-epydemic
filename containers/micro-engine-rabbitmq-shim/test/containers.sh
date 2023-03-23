@@ -28,9 +28,9 @@ BROKER=rabbitmq
 
 # Environments
 SHIM_ENV="-e EPYDEMIC_ENGINE_API_ENDPOINT=http://engine:5000/api/v1 \
-	  -e RABBITMQ_HOST=broker \
-	  -e RABBITMQ_REQUEST_CHANNEL=request \
-	  -e RABBITMQ_RESULT_CHANNEL=result"
+	  -e RABBITMQ_ENDPOINT=amqp://broker:5672 \
+	  -e RABBITMQ_REQUEST_QUEUE=request \
+	  -e RABBITMQ_RESULT_QUEUE=result"
 
 # Pid file
 PIDS=containers.pids
