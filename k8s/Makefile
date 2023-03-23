@@ -37,17 +37,16 @@ KUBECTL = kubectl
 # ---------- Targets ----------
 
 .PHONY: start
-start: env
+start:
 	$(MINIKUBE) start
 	$(MINIKUBE) addons enable metrics-server
+	$(MINIKUBE) addons enable ingress
+	$(KUBECTL) apply -f  $(RABBITMQ_OPERATOR)
 	nohup $(MINIKUBE) dashboard &
 
 .PHONY: stop
-start:
+stop:
 	$(MINIKUBE) stop
 
-deploy: env
+deploy:
 	$(KUBECTL) apply -f $(CLUSTER_YAML)
-
-env:
-	$(KUBECTL) apply -f  $(RABBITMQ_OPERATOR)
