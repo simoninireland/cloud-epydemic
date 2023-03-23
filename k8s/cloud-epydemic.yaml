@@ -19,16 +19,23 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloudepydemic
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: micro-engine
+  namespace: cloudepydemic
   labels:
     app: cluster
 spec:
   replicas: 1
   selector:
     matchLabels:
+      app: cluster
       component: engine
   strategy:
     type: RollingUpdate
@@ -47,27 +54,54 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 5000
+      - name: micro-engine-rabbitmq-shim
+        image: simoninireland/micro-engine-rabbitmq-shim:latest
+        imagePullPolicy: Never
+        env:
+        - name: EPYDEMIC_ENGINE_API_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: engine.endpoint
+        - name: RABBITMQ_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: broker.endpoint
+        - name: RABBITMQ_REQUEST_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: broker.queues.request
+        - name: RABBITMQ_RESULT_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: broker.queues.result
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: micro-engine-service
+  namespace: cloudepydemic
   labels:
     app: cluster
-    component: micro-engine-service
 spec:
-  type: NodePort
-  ports:
-    - port: 5000
-      nodePort: 30001
-      protocol: TCP
   selector:
     app: cluster
+    component: engine
+  ports:
+  - port: 5000
+    targetPort: 5000
 ---
 apiVersion: rabbitmq.com/v1beta1
 kind: RabbitmqCluster
 metadata:
-  name: message-broker
+  name: broker
+  namespace: cloudepydemic
+  labels:
+    app: cluster
+    component: message-broker
 spec:
   replicas: 1
   resources:
@@ -86,5 +120,34 @@ spec:
   persistence:
     storageClassName: standard
     storage: "50M"
-  service:
-    type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: message-broker-service
+  namespace: cloudepydemic
+  labels:
+    app: cluster
+    component: message-broker-ingress
+spec:
+  type: NodePort
+  selector:
+    app: cluster
+    component: message-broker
+  ports:
+  - port: 5672
+    targetPort: 5672
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: cloudepydemic
+  labels:
+    app: cluster
+    component: cluster-config
+data:
+  engine.endpoint: http://localhost:5000/api/v1  # access web API from shim (in the same pod)
+  broker.endpoint: amqp://broker:5672
+  broker.queues.request: request
+  broker.queues.result: result
