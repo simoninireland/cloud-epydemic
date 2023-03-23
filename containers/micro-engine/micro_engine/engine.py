@@ -24,7 +24,7 @@ import pickle
 def runExperiment(params):
     '''Run an experiment.
 
-    The parameters contain the usual experimental p;arameters for a
+    The parameters contain the usual experimental parameters for a
     single experiment, plus a special "_experiment_" value containing
     a base64-encoded pickled epyc.Experiment object that defines
     the experiment to be run.
