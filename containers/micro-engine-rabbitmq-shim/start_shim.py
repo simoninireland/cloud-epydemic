@@ -25,6 +25,7 @@ import json
 import time
 from datetime import datetime
 import logging
+import logging.handlers
 import pika
 import requests
 
@@ -34,6 +35,7 @@ endpoint = os.environ["EPYDEMIC_ENGINE_API_ENDPOINT"]
 rabbitmq = os.environ["RABBITMQ_ENDPOINT"]
 requestQueue = os.environ["RABBITMQ_REQUEST_QUEUE"]
 resultQueue = os.environ["RABBITMQ_RESULT_QUEUE"]
+retries = 5
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -41,14 +43,14 @@ logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
-#LOG_FILENAME = os.environ.get('LOGFILE') or 'shim.log'
-#handler = logging.handlers.TimedRotatingFileHandler(LOG_FILENAME,
-#                                                    when='midnight',
-#                                                    backupCount=7)
-#formatter = logging.Formatter('%(levelname)s:%(name)s: [%(asctime)s] %(message)s',
-#                              datefmt='%d/%b/%Y %H:%M:%S')
-#logger.addHandler(handler)
-#handler.setFormatter(formatter)
+LOG_FILENAME = os.environ.get('LOGFILE') or 'shim.log'
+handler = logging.handlers.TimedRotatingFileHandler(LOG_FILENAME,
+                                                    when='midnight',
+                                                    backupCount=7)
+formatter = logging.Formatter('%(levelname)s:%(name)s: [%(asctime)s] %(message)s',
+                              datefmt='%d/%b/%Y %H:%M:%S')
+logger.addHandler(handler)
+handler.setFormatter(formatter)
 
 # Define the callback
 def requestHandler(ch, method, properties, body):
@@ -82,15 +84,20 @@ def requestHandler(ch, method, properties, body):
     logger.info(f"Request {tag} completed (elapsed time = {dt}")
 
 # Connect to RabbitMQ
-logger.info(f"Connecting to RabbitMQ at {rabbitmq}")
+logger.info(f"Connecting to {rabbitmq}")
 connection = None
 channel = None
-try:
-    connection = pika.BlockingConnection(pika.URLParameters(rabbitmq))
-    channel = connection.channel()
-except Exception as e:
-    logger.warning(f"Failed to connect ({e}); re-trying...")
-    time.sleep(5)
+for i in range(retries):
+    try:
+        connection = pika.BlockingConnection(pika.URLParameters(rabbitmq))
+        channel = connection.channel()
+        break
+    except Exception as e:
+        logger.warning(f"Failed to connect ({e}); re-trying...")
+        time.sleep(5)
+if connection is None:
+    logger.info(f"Failed to connect to {rabbitmq}")
+    sys.exit(1)
 logger.info(f"Connected")
 
 # Ensure the channels exist
