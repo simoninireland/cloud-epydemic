@@ -31,6 +31,7 @@ metadata:
   namespace: cloudepydemic
   labels:
     app: cluster
+    component: engine
 spec:
   replicas: 1
   selector:
@@ -86,13 +87,13 @@ metadata:
   namespace: cloudepydemic
   labels:
     app: cluster
+    component: engine-service
 spec:
   selector:
     app: cluster
     component: engine
   ports:
   - port: 5000
-    targetPort: 5000
 ---
 apiVersion: rabbitmq.com/v1beta1
 kind: RabbitmqCluster
@@ -120,23 +121,8 @@ spec:
   persistence:
     storageClassName: standard
     storage: "50M"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: message-broker-service
-  namespace: cloudepydemic
-  labels:
-    app: cluster
-    component: message-broker-ingress
-spec:
-  type: NodePort
-  selector:
-    app: cluster
-    component: message-broker
-  ports:
-  - port: 5672
-    targetPort: 5672
+  service:
+    type: NodePort
 ---
 apiVersion: v1
 kind: ConfigMap
