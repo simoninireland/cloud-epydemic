@@ -41,7 +41,7 @@ start:
 	$(MINIKUBE) start
 	$(MINIKUBE) addons enable metrics-server
 	$(MINIKUBE) addons enable ingress
-	$(KUBECTL) apply -f  $(RABBITMQ_OPERATOR)
+	$(KUBECTL) apply -f $(RABBITMQ_OPERATOR)
 	nohup $(MINIKUBE) dashboard &
 
 .PHONY: stop
