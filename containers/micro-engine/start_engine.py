@@ -22,10 +22,6 @@
 import os
 import logging
 import logging.handlers
-from dotenv import load_dotenv
-
-# Load environment from .env
-load_dotenv(dotenv_path='.env')
 
 # Set up logging
 logger = logging.getLogger(__name__)
