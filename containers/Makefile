@@ -22,7 +22,8 @@
 # The containers
 CONTAINERS = \
 	micro-engine \
-	micro-engine-rabbitmq-shim
+	micro-engine-rabbitmq-shim \
+	api-geteway
 
 # The container repository user
 REPO_USER = simoninireland
@@ -63,6 +64,9 @@ micro-engine:
 	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
 
 micro-engine-rabbitmq-shim:
+	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
+
+api-gateway:
 	$(DOCKER_BUILD) -f $@/Dockerfile --tag $(REPO_USER)/$@ .
 
 push-dockerhub:
