@@ -27,6 +27,9 @@ conn = connexion.App(__name__, specification_dir='./')
 app = conn.app
 
 # Add API
+# The source of the OpenAPI  specification can be controlled
+# using the EPYDEMIC_OPENAPI  environment variable -- typically
+# this is only needed for testing
 api = os.environ.get("EPYDEMIC_OPENAPI", "./api.yaml")
 conn.add_api(api, resolver=RelativeResolver('micro_engine.api'))
 
