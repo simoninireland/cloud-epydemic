@@ -1,0 +1,7 @@
+epyc
+cloudpickle
+gunicorn
+Flask
+connexion[swagger-ui]
+pika
+requests
