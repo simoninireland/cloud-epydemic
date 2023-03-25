@@ -17,14 +17,19 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+import os
 import json
 import base64
 import pickle
 import cloudpickle
 from flask_unittest import ClientTestCase
-import micro_engine
 from epyc import Experiment
 from epydemic import StochasticDynamics, SIR, ERNetwork
+
+# Use the master API description
+os.environ["EPYDEMIC_OPENAPI"] = "../../lib/api.yaml"
+import micro_engine
+
 
 class TestAPI(ClientTestCase):
 

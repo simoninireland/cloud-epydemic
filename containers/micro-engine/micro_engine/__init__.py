@@ -17,15 +17,18 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+import os
 import connexion
+from connexion.resolver import RelativeResolver
 
 
 # Application object
 conn = connexion.App(__name__, specification_dir='./')
 app = conn.app
 
-# Add APIs
-conn.add_api('api.yaml')
+# Add API
+api = os.environ.get("EPYDEMIC_OPENAPI", "./api.yaml")
+conn.add_api(api, resolver=RelativeResolver('micro_engine.api'))
 
 # Checking endpoint (not part of the defined API)
 @conn.route('/')

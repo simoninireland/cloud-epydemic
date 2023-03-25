@@ -22,7 +22,7 @@ openapi: 3.0.3
 info:
   title: "cloud-epydemic compute engine API"
   description: "A microservices interface to cloud-based compute servers"
-  version: "0.1.0"
+  version: "1.0draft"
 
 servers:
   - url: "/api/v1"
@@ -52,10 +52,13 @@ components:
         results:
           type: "object"
 
+# operationId tags are provided "naked", and will probably need to be
+# re-directed to a specific package when the interface is implemented.
+
 paths:
   /runExperiment:
     post:
-      operationId: "micro_engine.engine.runExperiment"
+      operationId: "runExperiment"
       tags:
         - "Run"
       description: "Submit and run a single experiment"

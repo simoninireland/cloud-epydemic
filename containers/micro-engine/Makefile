@@ -42,7 +42,6 @@ DEV_REQUIREMENTS = dev-requirements.txt
 # ---------- Constructed commands ----------
 
 ACTIVATE = . $(VENV)/bin/activate
-RUN_FLASK = FLASK_APP=$(TEST_APP_INSTANCE) FLASK_DEBUG=1 $(FLASK) run
 RUN_TESTS = $(PYTHON) -m unittest discover -s test
 
 

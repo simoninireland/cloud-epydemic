@@ -53,15 +53,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install the API server
 COPY micro-engine/micro_engine/ ./micro_engine/
 RUN chown -R $EPYDEMIC_USER ./micro_engine
+COPY lib/api.yaml ./micro_engine
+RUN chown $EPYDEMIC_USER ./micro_engine/api.yaml
 COPY micro-engine/start.sh .
 RUN chown $EPYDEMIC_USER ./start.sh
 RUN chmod u+x ./start.sh
 COPY micro-engine/start_engine.py .
 RUN chown $EPYDEMIC_USER ./start_engine.py
 
-# Expose the http and https ports
-EXPOSE 80
-EXPOSE 443
+# Expose the server port
+EXPOSE 5000
 
 # Run the start-up script
 USER $EPYDEMIC_USER
