@@ -53,7 +53,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install the API server
 COPY micro-engine/micro_engine/ ./micro_engine/
 RUN chown -R $EPYDEMIC_USER ./micro_engine
-COPY lib/api.yaml ./micro_engine
+COPY lib/engine-api.yaml ./micro_engine/api.yaml
 RUN chown $EPYDEMIC_USER ./micro_engine/api.yaml
 COPY micro-engine/start.sh .
 RUN chown $EPYDEMIC_USER ./start.sh
