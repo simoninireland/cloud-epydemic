@@ -23,7 +23,7 @@
 CONTAINERS = \
 	micro-engine \
 	micro-engine-rabbitmq-shim \
-	api-geteway
+	api-gateway
 
 # The container repository user
 REPO_USER = simoninireland
