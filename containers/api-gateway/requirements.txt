@@ -5,3 +5,4 @@ Flask
 connexion[swagger-ui]
 pika
 requests
+retry

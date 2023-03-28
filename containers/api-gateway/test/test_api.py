@@ -28,8 +28,8 @@ import requests
 from epyc import Experiment
 from epydemic import StochasticDynamics, SIR, ERNetwork
 
-
 EXPERIMENT_ID = "epyc.experiment.id"
+
 
 class TestAPI(unittest.TestCase):
     endpoint = "http://localhost:5000"

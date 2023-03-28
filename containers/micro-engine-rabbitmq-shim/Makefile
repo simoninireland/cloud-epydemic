@@ -47,7 +47,7 @@ RUN_TESTS = $(PYTHON) -m unittest discover -s test
 
 .PHONY: env
 env: $(VENV)
-$(VENV):
+$(VENV): $(REQUIREMENTS)
 	$(PYTHON) -m venv venv3
 	$(ACTIVATE) && pip install -U pip wheel
 	$(ACTIVATE) && pip install -r $(REQUIREMENTS) && pip install -r $(DEV_REQUIREMENTS)

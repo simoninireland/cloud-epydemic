@@ -24,6 +24,7 @@ import base64
 import json
 import pickle
 import logging
+from retry import retry
 import pika
 from epyc import Experiment
 
@@ -34,55 +35,51 @@ logger = logging.getLogger(__name__)
 rabbitmq = os.environ["RABBITMQ_ENDPOINT"]
 requestQueue = os.environ["RABBITMQ_REQUEST_QUEUE"]
 resultQueue = os.environ["RABBITMQ_RESULT_QUEUE"]
-retries = 5
 
 EXPERIMENT_ID = "epyc.experiment.id"
 
-# Connect to RabbitMQ
-logger.info(f"Connecting to {rabbitmq}")
-connection = None
-channel = None
-for i in range(retries):
-    try:
-        connection = pika.BlockingConnection(pika.URLParameters(rabbitmq))
-        channel = connection.channel()
-        break
-    except Exception as e:
-        logger.warning(f"Failed to connect ({e}); re-trying...")
-        time.sleep(5)
-if connection is None:
-    logger.info(f"Failed to connect to {rabbitmq}")
-    sys.exit(1)
-logger.info(f"Connected")
+
+@retry(tries=5, delay=1, backoff=3, logger=logger)
+def connect(endpoint):
+    '''Connect to the RabbitMQ endpoint.
+
+    @param endpoint: the endpoint
+    @returns: the channel'''
+    logger.info(f"Connecting to {rabbitmq}")
+    connection = pika.BlockingConnection(pika.URLParameters(rabbitmq))
+    channel = connection.channel()
+    logger.info(f"Connected")
+
+    # ensure the queues exist
+    for ch in ["request", "result"]:
+        channel.queue_declare(queue=ch)
+    return channel
 
 
 # ---------- API functions ----------
 
 def runExperimentAsync(submission):
-    '''Run an experiment asynchronously.
-
-    The experiment is submitted to the message broker's request channel,
-    and an experiment id returned to later acquisition.
+    '''Run an experiment asynchronously. The experiment is submitted
+    to the message broker's request channel.
 
     @param submission: experiment and its parameters'''
-
-    # post the result to the request queue
+    channel = connect(rabbitmq)
     args = json.dumps(submission)
     channel.basic_publish(exchange='',
                           routing_key=requestQueue,
                           body=args)
+    channel.close()
 
     # return an empty body
     return ''
 
 
 def getPendingResults():
-    '''Retrieve all pending results.
-
-    This reads messages from the message broker's result channel
-    and returns them as an array.
+    '''Retrieve all pending results. This reads messages from the
+    message broker's result channel and returns them as an array.
 
     @returns: an array of results'''
+    channel = connect(rabbitmq)
     results = []
     message = 1
     while message is not None:
@@ -97,6 +94,7 @@ def getPendingResults():
             r = dict(id=id,
                      resultsDict=rc)
             results.append(r)
+    channel.close()
 
     # return the array
     return results

@@ -2,3 +2,4 @@ epydemic >= 1.12
 cloudpickle
 pika
 requests
+retry

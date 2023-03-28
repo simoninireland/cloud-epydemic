@@ -25,6 +25,7 @@ import time
 import unittest
 import pika
 import requests
+from retry import retry
 from epyc import Experiment
 from epydemic import StochasticDynamics, SIR, ERNetwork
 
@@ -33,29 +34,31 @@ EXPERIMENT_ID = "epyc.experiment.id"
 
 class TestAPI(unittest.TestCase):
     endpoint = "amqp://localhost:5672"
-    retries = 5
-    backoff = 5
 
+    @retry(tries=5, delay=1, backoff=5)
     def setUp(self):
         # connect to the broker
-        self._connection = None
-        self._channel = None
-        for i in range(self.retries):
-            try:
-                self._connection = pika.BlockingConnection(pika.URLParameters(self.endpoint))
-                self._channel = self._connection.channel()
-                break
-            except Exception as e:
-                print(f"Failed to connect ({e}); re-trying...")
-                time.sleep(self.backoff)
-        if self._connection is None:
-            print(f"Failed to connect to {self._endpoint}")
-            sys.exit(1)
-        print(f"Connected to {self.endpoint}")
+        self._connection = pika.BlockingConnection(pika.URLParameters(self.endpoint))
+        self._channel = self._connection.channel()
 
         # ensure the queues exist
         for ch in ["request", "result"]:
             self._channel.queue_declare(queue=ch)
+
+    @retry(tries=5, delay=1, backoff=5)
+    def readResult(self):
+        '''Read a result from the result queue.
+
+        We need this loop because we need to be able to read the
+        expected one result message. It'd be better to refactor this
+        to use a proper event loop -- but that's then hard for termination
+        detection, perhaps.'''
+        message, properties, body = self._channel.basic_get("result")
+        if message is not None:
+            rc = json.loads(body)
+            return rc
+        else:
+            raise Exception()
 
     def testExperiment(self):
         '''Test we can submit an experiment and have it run successfully.'''
@@ -92,19 +95,7 @@ class TestAPI(unittest.TestCase):
                                     body=args)
 
         # read the result back
-        # We need this loop because we need to be able to read the
-        # expected one result message. It'd be better to refactor this
-        # to use a proper event loop -- but that's then hard for termination
-        # detection, perhaps.
-        rc = None
-        for i in range(self.retries):
-            message, properties, body = self._channel.basic_get("result")
-            if message is not None:
-                rc = json.loads(body)
-                break
-            else:
-                print("backoff")
-                time.sleep(self.backoff)
+        rc = self.readResult()
         self.assertIsNotNone(rc)
 
         # check we got a valid results dict back
