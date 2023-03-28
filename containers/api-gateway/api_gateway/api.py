@@ -61,10 +61,6 @@ logger.info(f"Connected")
 
 # ---------- API functions ----------
 
-def runExperiment(params):
-    raise NotImplementedError("runExperiment() not available")
-
-
 def runExperimentAsync(params):
     '''Run an experiment asynchronously.
 

@@ -42,15 +42,3 @@ def runExperiment(params):
 
     # return the results dict
     return rc
-
-
-# ---------- Unimplemented API methods----------
-
-def runExperimentAsync(params):
-    raise NotImplementedError("runExperimentAync() not available")
-
-def getPendingResult(id):
-    raise NotImplementedError("getPendingfResult() not available")
-
-def getPendingResults():
-    raise NotImplementedError("getPendingfResults() not available")
