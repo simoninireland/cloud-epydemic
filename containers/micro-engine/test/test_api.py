@@ -30,6 +30,8 @@ from epydemic import StochasticDynamics, SIR, ERNetwork
 os.environ["EPYDEMIC_OPENAPI"] = "../../lib/engine-api.yaml"
 import micro_engine
 
+EXPERIMENT_ID = "epyc.experiment.id"
+
 
 class TestAPI(ClientTestCase):
 
@@ -55,12 +57,21 @@ class TestAPI(ClientTestCase):
         model = SIR()
         e = StochasticDynamics(model, ERNetwork())
 
+        # construct a submission
+        submission = dict()
+
         # pickle the experiment and add to the parameters
         encoded = base64.b64encode(cloudpickle.dumps(e)).decode('ascii')
-        params['_experiment_'] = encoded
+        submission['experiment'] = encoded
+
+        # add the identifier
+        submission['experiment-id'] = "My experiment"
+
+        # add the parameters
+        submission['params'] = params
 
         # make the request
-        res = client.post('/api/v1/runExperiment', json=params)
+        res = client.post('/api/v1/runExperiment', json=submission)
         self.assertStatus(res, 200)
 
         # check we got a valid results dict back
@@ -74,6 +85,9 @@ class TestAPI(ClientTestCase):
         self.assertTrue(rc[Experiment.RESULTS][SIR.INFECTED] == 0)
         self.assertTrue(rc[Experiment.RESULTS][SIR.REMOVED] >= 0)
 
+        # check we got the id back
+        self.assertEqual(rc[Experiment.METADATA][EXPERIMENT_ID], submission['experiment-id'])
+
     def testNoExperiment(self, client):
         '''Test sending a request to run but no experiment.'''
         params = dict()
@@ -86,3 +100,7 @@ class TestAPI(ClientTestCase):
         # make the request
         res = client.post('/api/v1/runExperiment', json=params)
         self.assertStatus(res, 400)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -36,10 +36,7 @@ requestQueue = os.environ["RABBITMQ_REQUEST_QUEUE"]
 resultQueue = os.environ["RABBITMQ_RESULT_QUEUE"]
 retries = 5
 
-
-# Experiment id counter
-experimentId = 0
-
+EXPERIMENT_ID = "epyc.experiment.id"
 
 # Connect to RabbitMQ
 logger.info(f"Connecting to {rabbitmq}")
@@ -61,33 +58,22 @@ logger.info(f"Connected")
 
 # ---------- API functions ----------
 
-def runExperimentAsync(params):
+def runExperimentAsync(submission):
     '''Run an experiment asynchronously.
 
     The experiment is submitted to the message broker's request channel,
     and an experiment id returned to later acquisition.
 
-    @param params: experiment and its parameters
-    @returns: an experimt id'''
-    global experimentId
-
-    # add an experiment id to the porameters
-    id = experimentId
-    experimentId += 1
-    params['_experiment-id_'] = id
+    @param submission: experiment and its parameters'''
 
     # post the result to the request queue
-    args = json.dumps(params)
+    args = json.dumps(submission)
     channel.basic_publish(exchange='',
                           routing_key=requestQueue,
                           body=args)
 
-    # return the id
-    return id
-
-
-def getPendingResult(id):
-    raise NotImplementedError("getPendingfResult() not available")
+    # return an empty body
+    return ''
 
 
 def getPendingResults():
@@ -98,16 +84,14 @@ def getPendingResults():
 
     @returns: an array of results'''
     results = []
-
-    rc = 1
-    while rc is not None:
-        message, properties, body = self._channel.basic_get(resultQueue)
+    message = 1
+    while message is not None:
+        message, properties, body = channel.basic_get(resultQueue)
         if message is not None:
             rc = json.loads(body)
 
-            # remove the id
-            id = rc[Experiment.PARAMETERS]['_experiment-id_']
-            del rc[Experiment.PARAMETERS]['_experiment-id_']
+            # retrieve the id
+            id = rc[Experiment.METADATA][EXPERIMENT_ID]
 
             # package the result
             r = dict(id=id,

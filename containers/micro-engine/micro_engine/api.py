@@ -19,9 +19,12 @@
 
 import base64
 import pickle
+from epyc import Experiment
+
+EXPERIMENT_ID = "epyc.experiment.id"
 
 
-def runExperiment(params):
+def runExperiment(submission):
     '''Run an experiment.
 
     The parameters contain the usual experimental parameters for a
@@ -32,13 +35,21 @@ def runExperiment(params):
     @param params: experimental parameters
     @returns: the results dict'''
 
+    # extract the experiment ID
+    id = submission['experiment-id']
+
     # extract and reconstruct the experiment object
-    encoded = params['_experiment_'].encode('ascii')
+    encoded = submission['experiment'].encode('ascii')
     e = pickle.loads(base64.b64decode(encoded, validate=True))
-    del params['_experiment_']
+
+    # extract the parameters
+    params = submission['params']
 
     # run the experiment
     rc = e.set(params).run()
+
+    # add the experiment identiofier to the resul metadata
+    rc[Experiment.METADATA][EXPERIMENT_ID] = id
 
     # return the results dict
     return rc

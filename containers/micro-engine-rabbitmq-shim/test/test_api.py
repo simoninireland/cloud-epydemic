@@ -28,6 +28,8 @@ import requests
 from epyc import Experiment
 from epydemic import StochasticDynamics, SIR, ERNetwork
 
+EXPERIMENT_ID = "epyc.experiment.id"
+
 
 class TestAPI(unittest.TestCase):
     endpoint = "amqp://localhost:5672"
@@ -70,12 +72,21 @@ class TestAPI(unittest.TestCase):
         model = SIR()
         e = StochasticDynamics(model, ERNetwork())
 
+        # construct a submission
+        submission = dict()
+
         # pickle the experiment and add to the parameters
         encoded = base64.b64encode(cloudpickle.dumps(e)).decode('ascii')
-        params['_experiment_'] = encoded
+        submission['experiment'] = encoded
+
+        # add the identifier
+        submission['experiment-id'] = "My experiment"
+
+        # add the parameters
+        submission['params'] = params
 
         # make the request
-        args = json.dumps(params)
+        args = json.dumps(submission)
         self._channel.basic_publish(exchange='',
                                     routing_key="request",
                                     body=args)
@@ -105,6 +116,9 @@ class TestAPI(unittest.TestCase):
         # (we can't assume that an outbreak occurred)
         self.assertTrue(rc[Experiment.RESULTS][SIR.INFECTED] == 0)
         self.assertTrue(rc[Experiment.RESULTS][SIR.REMOVED] >= 0)
+
+        # check we got the id back
+        self.assertEqual(rc[Experiment.METADATA][EXPERIMENT_ID], submission['experiment-id'])
 
 
 if __name__ == '__main__':

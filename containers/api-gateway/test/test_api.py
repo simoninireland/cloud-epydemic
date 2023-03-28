@@ -22,20 +22,90 @@ import json
 import base64
 import pickle
 import cloudpickle
-from flask_unittest import ClientTestCase
+import time
+import unittest
+import requests
 from epyc import Experiment
 from epydemic import StochasticDynamics, SIR, ERNetwork
 
-# Use the master API description
-os.environ["EPYDEMIC_OPENAPI"] = "../../lib/api.yaml"
-import api_gateway
 
+EXPERIMENT_ID = "epyc.experiment.id"
 
-class TestAPI(ClientTestCase):
+class TestAPI(unittest.TestCase):
+    endpoint = "http://localhost:5000"
 
-    app = api_gateway.app
-
-    def testUp(self, client):
+    def testUp(self):
         '''Test we can hit the default endpoint.'''
-        res = client.get('/')
-        self.assertStatus(res, 200)
+        res = requests.get(self.endpoint)
+        self.assertEqual(res.status_code, 200)
+
+    def testSubmitExperiment(self):
+        '''Test we can submit an experiment to the engine.'''
+
+        # a simple parameter set, above the epidemic threshold
+        params = dict()
+        params[SIR.P_INFECT] = 0.3
+        params[SIR.P_INFECTED] = 0.01
+        params[SIR.P_REMOVE] = 0.05
+        params[ERNetwork.N] = 1000
+        params[ERNetwork.KMEAN] = 5
+
+        # create the experiment
+        model = SIR()
+        e = StochasticDynamics(model, ERNetwork())
+
+        # construct a submission
+        submission = dict()
+
+        # pickle the experiment and add to the parameters
+        encoded = base64.b64encode(cloudpickle.dumps(e)).decode('ascii')
+        submission['experiment'] = encoded
+
+        # add the identifier
+        submission['experiment-id'] = "My experiment"
+
+        # add the parameters
+        submission['params'] = params
+
+        # make the request
+        res = requests.post(f"{self.endpoint}/api/v1/runExperimentAsync", json=submission)
+        self.assertEqual(res.status_code, 200)
+
+    def testSubmitAndRetrieveExperiment(self):
+        '''Test we can submit an experiment and get the result.'''
+
+        # a simple parameter set, above the epidemic threshold
+        params = dict()
+        params[SIR.P_INFECT] = 0.3
+        params[SIR.P_INFECTED] = 0.01
+        params[SIR.P_REMOVE] = 0.05
+        params[ERNetwork.N] = 1000
+        params[ERNetwork.KMEAN] = 5
+
+        # create the experiment
+        model = SIR()
+        e = StochasticDynamics(model, ERNetwork())
+
+        # construct a submission
+        submission = dict()
+
+        # pickle the experiment and add to the parameters
+        encoded = base64.b64encode(cloudpickle.dumps(e)).decode('ascii')
+        submission['experiment'] = encoded
+
+        # add the identifier
+        submission['experiment-id'] = "My experiment"
+
+        # add the parameters
+        submission['params'] = params
+
+        # make the request
+        res = requests.post(f"{self.endpoint}/api/v1/runExperimentAsync", json=submission)
+        self.assertEqual(res.status_code, 200)
+
+        # wait a bit
+        time.sleep(5)
+
+        # retrieve the results
+        res = requests.get(f"{self.endpoint}/api/v1/getPendingResults")
+        self.assertEqual(res.status_code, 200)

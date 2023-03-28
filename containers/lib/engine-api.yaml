@@ -29,23 +29,26 @@ servers:
 components:
   schemas:
     Parameters:
+      description: "A dict of experimental parameters"
+      type: "object"
+      additionalProperties: true
+
+    ExperimentSubmission:
       description: "An experiment with a dict of its experimental parameters"
       type: "object"
       required:
-      - "_experiment_"
+      - "experiment"
+      - "experiment-id"
+      - "params"
       properties:
-        _experiment_:
+        experiment:
           type: "string"
-      additionalProperties: true
-
-    ExperimentId:
-      description: "An identifier for a running experiment"
-      type: "object"
-      required:
-      - "id"
-      properties:
-        id:
+        experiment-id:
           type: "string"
+        params_:
+          type: "object"
+          additionalProperties:
+              $ref: "#components/schemas/Parameters"
 
     ResultsDict:
       description: "A results dict"
@@ -89,13 +92,13 @@ paths:
       tags:
       - "Run experiments"
       requestBody:
-          description: "Experiment to run with parameters"
+          description: "Experiment submission with parameters"
           required: true
-          x-body-name: "params"
+          x-body-name: "submission"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Parameters"
+                $ref: "#/components/schemas/ExperimentSubmission"
       responses:
         200:
           description: "Experiment executed"
