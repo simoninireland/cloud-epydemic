@@ -1,4 +1,4 @@
-# Ompute lab to connect to a cloud-based compute engine
+# Lab to connect to a cloud-based compute engine
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -17,18 +17,22 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-import time
-import sys
+import os
 import logging
 import base64
 import pickle
-import pika
+import cloudpickle
+import uuid
+import time
 import requests
 from contextlib import AbstractContextManager
 from epyc import Logger, Lab, LabNotebook, Experiment
 
-
 logger = logging.getLogger(Logger)
+
+# Metadata tag for experiment ids
+# sd: This needs to move to epyc.Experiment
+EXPERIMENT_ID = "epyc.experiment.id"
 
 
 class CloudLab(Lab):
@@ -40,79 +44,83 @@ class CloudLab(Lab):
     Combined with a persistent :class:`LabNotebook`, this allows for
     fully decoupled access to an on-going computational experiment
     with piecewise retrieval of results.
-
-    This class requires a cluster to already be set up and running, configured
-    for persistent access, with access to the necessary code and libraries,
-    and with appropriate security information available to the client.
-
     """
 
-    RABBITMQ_REQUEST_CHANNEL = "request"
-    RABBITMQ_RESULT_CHANNEL = "result"
-    EXPERIMENT_KEY = "_experiment_"
-    JOBID_KEY = "_jobid_"
+    # Tuning parameters
+    WaitingTime: int = 30           #: Waiting time for checking for job completion. Lower values increase network traffic.
 
 
     def __init__(self, url, notebook: LabNotebook = None):
-        """Create an empty lab attached to the given cluster.#
+        """Create an empty lab attached to the given cluster. The
+        cluster is specified with a web API endpoint.
 
         :param url: API endpoint
         :param notebook: the notebook used to results (defaults to an empty :class:`LabNotebook`)"""
         super().__init__(notebook)
         self._endpoint = url
-        self._jobid = 0
 
 
-    # ---------- Basic API ----------
+    # ---------- API functions ----------
 
-    def jobid(self) -> str:
-        """Return a new unique job id.
+    # See containers/lib/gateway-api.yaml for the API definition
 
-        @returns: a unique id"""
-        s = str(self._jobid)
-        self._jobid += 1
-        return s
+    def experimentIdentifier(self):
+        '''Create a new experiment identifier. The identifier
+        is guaranteed to be unique for this use of the API.
 
-    def open(self):
-        """Open a connection to the RabbitMQ endpoint, ensuring that the
-        necessary channels exist."""
-        if self._connection is not None:
-            return
+        At present we use random UUIDs.
 
-        # connect to the endpoint
-        self._connection = pika.BlockingConnection(pika.ConnectionParameters(host-self._endpoint))
-        self._channel = self._connection.channel()
+        @returns: a unique string'''
+        u = uuid.uuid4()
+        return str(u)
 
-        # ensure the queues exist
-        for ch in CloudLab.RABBITMQ_REQUEST_CHANNEL, CloudLab.RABBITMQ_RESULT_CHANNEL]:
-            self._channel.queue_declare(queue=ch)
+    def runExperimentAsync(self, e, params):
+        '''Run an experiment asynchronously.
 
-    def submitRequest(self, e, params) -> int:
-        """Submit an experiment with the given parameters.
+        The experiment is submitted to the message broker's request channel,
+        and an experiment id returned to later acquisition.
 
-        @param e: the experiment
-        @param params: the experimental parameters
-        @returns job identifier"""
+        @param submission: experiment and its parameters
+        @returns: the experiment identifier'''
 
-        # encode the experiment object as Base64
+        # construct a submission
+        submission = dict()
+
+        # pickle the experiment and add to the parameters
         encoded = base64.b64encode(cloudpickle.dumps(e)).decode('ascii')
-        params[self.EXPERIMENT_KEY] = encoded
-        j = self.jobid()
-        params[self.JOBID_KEY] = j
-        args = json.dumps(params)
+        submission['experiment'] = encoded
 
-        # send message to the broker
-        self._channel.basic_publish(exchange='',
-                                    routing_key=self.RABBITMQ_REQUEST_CHANNEL,
-                                    body=args)
+        # add the identifier
+        j = self.experimentIdentifier()
+        submission['experiment-id'] = j
 
+        # add the parameters
+        submission['params'] = params
+
+        # make the request
+        res = requests.post(f"{self._endpoint}/api/v1/runExperimentAsync", json=submission)
+        if res.status_code != 200:
+            raise Exception(f"Failed to submit experiment: {res.status_code}")
+
+        # return the experiment identifier
         return j
 
-    def close(self):
-        """Close the connection to the RabbitMQ endpoint."""
-        self._connection.close()
-        self._connection = None
-        self._channel = None
+    def getPendingResults(self):
+        '''Retrieve all pending results.
+
+        This reads messages from the message broker's result channel
+        and returns them as an array.
+
+        @returns: an array of results'''
+
+        # get the array
+        res = requests.get(f"{self._endpoint}/api/v1/getPendingResults")
+        if res.status_code != 200:
+            raise Exception(f"Failed to retrieve results: {res.status_code}")
+
+        # strip the expewriment ids (they're in the metadata)
+        rcs = map(lambda idrc: idrc['resultsDict'], res.json())
+        return rcs
 
 
     # ---------- Remote control of the compute engines ----------
@@ -145,6 +153,7 @@ class CloudLab(Lab):
         answer, so we can plot them and see the answer emerge.
 
         :param e: the experiment"""
+        self.open()
 
         # create the experimental parameter space
         eps = self.experiments(e)
@@ -154,15 +163,12 @@ class CloudLab(Lab):
             nb = self.notebook()
 
             try:
-                # connect to the cluster
-                self.open()
-
                 # submit an experiment at each point in the parameter space to the cluster
                 try:
                     for (ep, p) in eps:
-                        j = self.submitRequest(ep, p)
+                        j = self.runExperimentAsync(ep, p)
                         logger.info(f"Submitted job {j}")
-                        nb.addPendingResult(p, id)
+                        nb.addPendingResult(p, j)
                 except Exception as e:
                     logger.error(f'Exception when starting experiments: {e}')
             finally:
@@ -170,14 +176,11 @@ class CloudLab(Lab):
                 nb.commit()
                 self.close()
 
-    def updateResults(self, purge : bool = False) -> int:
-        """Update our results within any pending results that have completed since we
-        last retrieved results from the cluster. Optionally purges any jobs that
-        have crashed, which can be due to engine failure within the
-        cluster. This prevents individual crashes blocking the retrieval of other jobs.
+    def updateResults(self) -> int:
+        """Update our results with any pending results that have completed since we
+        last retrieved results from the cluster.
 
-        :param purge: (optional) cancel any jobs that have crashed (defaults to False)
-        :returns: the number of pending results completed at this call"""
+        :returns: the number of pending results completed by this call"""
         nb = self.notebook()
 
         # look for pending results if we're waiting for any
@@ -185,39 +188,29 @@ class CloudLab(Lab):
         if not nb.ready():
             # we have results to get
             try:
-                crashed = []
                 self.open()
-                for j in set(nb.allPendingResults()):
+
+                # get all the results the cluster has available
+                rcs = self.getPendingResults()
+
+                # resolve pending results
+                for rc in rcs:
+                    # extract the experiment id
+                    j = rc[Experiment.METADATA][EXPERIMENT_ID]
+                    logger.info(f'Job {j} completed')
+
+                    # resolve the result in the appropriate result set
                     try:
-                        # query the status of a job
-                        #print('Test status of {j}'.format(j=j))
-                        status = self._client.result_status(j, status_only=False)
+                        nb.resolvePendingResult(rc, j)
+                    except KeyError as e:
+                        # we were sent a result we don't recognise -- i.e., one
+                        # that is not in any of our result sets
+                        logger.warning(f'Job {j} not recognised -- discarded')
 
-                        # add all completed jobs to the notebook
-                        if j in status['completed']:
-                            r = status[j]
-                            logger.info(f'Job {j} completed')
-
-                            # resolve the result in the appropriate result set
-                            nb.resolvePendingResult(r, j)
-
-                            # record that we retrieved the results for the given job
-                            n = n + 1
-
-                            # purge the completed job from the cluster
-                            self._client.purge_hub_results(j)
-                    except Exception as e:
-                        # report the exception and carry on, recording the job as crashed
-                        print(e, file=sys.stderr)
-                        crashed.append(j)
-
-                # purge any crashed jobs if requested
-                if purge and len(crashed) > 0:
-                    for j in crashed:
-                        nb.cancelPendingResult(j)
-                        self._client.purge_hub_results(j)
+                    # record that we retrieved the results for the given job
+                    n = n + 1
             finally:
-                # commit changes to the notebook and close the connection
+                # commit changes to the notebook
                 nb.commit()
                 self.close()
 
@@ -232,22 +225,6 @@ class CloudLab(Lab):
 
         :param timeout: timeout period in seconds (defaults to forever)
         :returns: True if all the results completed"""
-
-        # we can't use pyparallel.Client.wait() for this, because that
-        # method only works for cases where the Client object is the one that
-        # submitted the jobs to the cluster hub -- and therefore has the
-        # necessary data structures to perform synchronisation. This isn't the
-        # case for us, as one of the main goals of epyc is to support disconnected
-        # operation, which implies a different Client object retrieving results
-        # than the one that submitted the jobs in the first place. This is
-        # unfortunate, but understandable given the typical use cases for
-        # Client objects in pyparallel.
-        #
-        # Instead. we have to code around a little busily. The ClusterLab.WaitingTime
-        # global sets the latency for waiting, and we repeatedly wait for this amount
-        # of time before updating the results. The latency value essentially controls
-        # how busy this process is: given that most simulations are expected to
-        # be long, a latency in the tens of seconds feels about right as a default
         nb = self.notebook()
         if nb.numberOfAllPendingResults() > 0:
             # we've got pending results, wait for them
