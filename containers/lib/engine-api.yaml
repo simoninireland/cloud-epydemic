@@ -1,0 +1,107 @@
+# OpenAPI definition of the engine API
+#
+# Copyright (C) 2023 Simon Dobson
+#
+# This file is part of cloud-epydemic, network simulation as a service
+#
+# cloud-epydemic is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# cloud-epydemic is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
+
+openapi: 3.0.3
+info:
+  title: "cloud-epydemic compute engine API"
+  description: "A microservices interface to cloud-based compute servers"
+  version: "1.0draft"
+
+servers:
+  - url: "/api/v1"
+
+components:
+  schemas:
+    Parameters:
+      description: "An experiment with a dict of its experimental parameters"
+      type: "object"
+      required:
+      - "_experiment_"
+      properties:
+        _experiment_:
+          type: "string"
+      additionalProperties: true
+
+    ExperimentId:
+      description: "An identifier for a running experiment"
+      type: "object"
+      required:
+      - "id"
+      properties:
+        id:
+          type: "string"
+
+    ResultsDict:
+      description: "A results dict"
+      type: "object"
+      required:
+      - "parameters"
+      - "metadata"
+      - "results"
+      properties:
+        parameters:
+          type: "object"
+        metadata:
+          type: "object"
+        results:
+          type: "object"
+
+    ResultsDicts:
+      description: "An array of results dicts with the corresponding experiment ids"
+      type: "array"
+      items:
+        type: "object"
+        required:
+        - "id"
+        - "resultsDict"
+        properties:
+          id:
+            type: "string"
+          resultsDict:
+            type: "object"
+            additionalProperties:
+              $ref: "#components/schemas/ResultsDict"
+
+# operationId tags are provided "naked", and will probably need to be
+# re-directed to a specific package when the interface is implemented.
+
+paths:
+  /runExperiment:
+    post:
+      description: "Submit and run a single experiment"
+      operationId: "runExperiment"
+      tags:
+      - "Run experiments"
+      requestBody:
+          description: "Experiment to run with parameters"
+          required: true
+          x-body-name: "params"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Parameters"
+      responses:
+        200:
+          description: "Experiment executed"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultsDict"
+        400:
+          description: "Badly-formed experiment request"

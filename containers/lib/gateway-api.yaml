@@ -1,4 +1,4 @@
-# OpenAPI definition of the engine API
+# OpenAPI definition of the gateway API
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -19,8 +19,8 @@
 
 openapi: 3.0.3
 info:
-  title: "cloud-epydemic compute engine API"
-  description: "A microservices interface to cloud-based compute servers"
+  title: "cloud-epydemic compute engine gateway API"
+  description: "A cloud-based experiment server"
   version: "1.0draft"
 
 servers:
@@ -82,30 +82,6 @@ components:
 # re-directed to a specific package when the interface is implemented.
 
 paths:
-  /runExperiment:
-    post:
-      description: "Submit and run a single experiment"
-      operationId: "runExperiment"
-      tags:
-      - "Run experiments"
-      requestBody:
-          description: "Experiment to run with parameters"
-          required: true
-          x-body-name: "params"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Parameters"
-      responses:
-        200:
-          description: "Experiment executed"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResultsDict"
-        400:
-          description: "Badly-formed experiment request"
-
   /runExperimentAsync:
     post:
       description: "Submit and run a single experiment asynchronously"
