@@ -39,14 +39,14 @@ RUN useradd -m -d $EPYDEMIC_HOME -s /bin/bash $EPYDEMIC_USER
 
 # Install the additional Python dependencies
 WORKDIR $EPYDEMIC_HOME
-COPY micro-engine/requirements.txt .
+COPY api-gateway/requirements.txt .
 RUN pip install --upgrade pip wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install the API server
 COPY api-gateway/api_gateway/ ./api_gateway/
 RUN chown -R $EPYDEMIC_USER ./api_gateway
-COPY lib/api.yaml ./api_gateway
+COPY lib/gateway-api.yaml ./api_gateway/api.yaml
 RUN chown $EPYDEMIC_USER ./api_gateway/api.yaml
 COPY api-gateway/start.sh .
 RUN chown $EPYDEMIC_USER ./start.sh
