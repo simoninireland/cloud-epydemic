@@ -52,3 +52,6 @@ stop:
 
 deploy:
 	$(KUBECTL) apply -f $(CLUSTER_YAML)
+
+reallyclean:
+	$(KUBECTL) delete ns $(NAMESPACE)
