@@ -63,7 +63,7 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: config
-              key: engine.endpoint
+              key: engine.endpoint.local
         - name: RABBITMQ_ENDPOINT
           valueFrom:
             configMapKeyRef:
@@ -79,21 +79,6 @@ spec:
             configMapKeyRef:
               name: config
               key: broker.queues.result
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: micro-engine-service
-  namespace: cloudepydemic
-  labels:
-    app: cluster
-    component: engine-service
-spec:
-  selector:
-    app: cluster
-    component: engine
-  ports:
-  - port: 5000
 ---
 apiVersion: rabbitmq.com/v1beta1
 kind: RabbitmqCluster
@@ -121,8 +106,92 @@ spec:
   persistence:
     storageClassName: standard
     storage: "50M"
-  service:
-    type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: cloudepydemic
+  labels:
+    app: cluster
+    component: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster
+      component: gateway
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: cluster
+        component: gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: simoninireland/api-gateway:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+        env:
+        - name: RABBITMQ_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: broker.endpoint
+        - name: RABBITMQ_REQUEST_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: broker.queues.request
+        - name: RABBITMQ_RESULT_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: broker.queues.result
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  labels:
+    app: cluster
+    component: gateway-service
+spec:
+  type: ClusterIP
+  selector:
+    app: cluster
+    component: gateway
+  ports:
+  - port: 5000
+    targetPort: 5000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+  namespace: cloudepydemic
+  labels:
+    app: cluster
+    component: ingress
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gateway-service
+            port:
+              number: 5000
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -133,7 +202,9 @@ metadata:
     app: cluster
     component: cluster-config
 data:
-  engine.endpoint: http://localhost:5000/api/v1  # access web API from shim (in the same pod)
+  engine.endpoint.local: http://localhost:5000/api/v1  # access web API from shim (in the same pod)
+  engine.endpoint: http://micro-engine:5000/api/v1
   broker.endpoint: amqp://broker:5672
   broker.queues.request: request
   broker.queues.result: result
+  gateway.endpoint: http://gateway-service:5000/api/v1
