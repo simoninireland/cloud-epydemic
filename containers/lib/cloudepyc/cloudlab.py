@@ -163,7 +163,7 @@ class CloudLab(Lab):
             nb = self.notebook()
 
             try:
-                # submit an experiment at each point in the parameter space to the cluster
+                # submit an experiment at each point in the parameter space
                 try:
                     for (ep, p) in eps:
                         j = self.runExperimentAsync(ep, p)
