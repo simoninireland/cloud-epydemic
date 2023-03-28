@@ -25,12 +25,13 @@ NETWORK=cloudepydemic
 ENGINE=$REPO_USER/micro-engine
 SHIM=$REPO_USER/micro-engine-rabbitmq-shim
 BROKER=rabbitmq
+GATEWAY=$REPO_USER/api-gateway
 
 # Environments
-SHIM_ENV="-e EPYDEMIC_ENGINE_API_ENDPOINT=http://engine:5000/api/v1 \
-	  -e RABBITMQ_ENDPOINT=amqp://broker:5672 \
-	  -e RABBITMQ_REQUEST_QUEUE=request \
-	  -e RABBITMQ_RESULT_QUEUE=result"
+ENV="-e EPYDEMIC_ENGINE_API_ENDPOINT=http://engine:5000/api/v1 \
+     -e RABBITMQ_ENDPOINT=amqp://broker:5672 \
+     -e RABBITMQ_REQUEST_QUEUE=request \
+     -e RABBITMQ_RESULT_QUEUE=result"
 
 # Pid file
 PIDS=containers.pids
@@ -54,7 +55,10 @@ if [ "$command" == "start" ]; then
     docker run --rm -it -d --network $NETWORK -p 5672:5672 --name broker $BROKER >>$PIDS
 
     # start the shim
-    docker run --rm -it -d --network $NETWORK $SHIM_ENV --name shim $SHIM >>$PIDS
+    docker run --rm -it -d --network $NETWORK $ENV --name shim $SHIM >>$PIDS
+
+    # start the gateway
+    docker run --rm -it -d --network $NETWORK $ENV --name gateway $GATEWAY >>$PIDS
 elif [ "$command" == "stop" ]; then
     # kill all the containers
     if [ -e $PIDS ]; then
