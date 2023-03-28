@@ -27,7 +27,7 @@ from epyc import Experiment
 from epydemic import StochasticDynamics, SIR, ERNetwork
 
 # Use the master API description
-os.environ["EPYDEMIC_OPENAPI"] = "../../lib/api.yaml"
+os.environ["EPYDEMIC_OPENAPI"] = "../../lib/engine-api.yaml"
 import micro_engine
 
 
