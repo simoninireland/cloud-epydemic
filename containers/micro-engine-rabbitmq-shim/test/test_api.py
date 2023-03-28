@@ -31,10 +31,25 @@ from epydemic import StochasticDynamics, SIR, ERNetwork
 
 class TestAPI(unittest.TestCase):
     endpoint = "amqp://localhost:5672"
+    retries = 5
+    backoff = 5
 
     def setUp(self):
-        self._connection = pika.BlockingConnection(pika.URLParameters(self.endpoint))
-        self._channel = self._connection.channel()
+        # connect to the broker
+        self._connection = None
+        self._channel = None
+        for i in range(self.retries):
+            try:
+                self._connection = pika.BlockingConnection(pika.URLParameters(self.endpoint))
+                self._channel = self._connection.channel()
+                break
+            except Exception as e:
+                print(f"Failed to connect ({e}); re-trying...")
+                time.sleep(self.backoff)
+        if self._connection is None:
+            print(f"Failed to connect to {self._endpoint}")
+            sys.exit(1)
+        print(f"Connected to {self.endpoint}")
 
         # ensure the queues exist
         for ch in ["request", "result"]:
@@ -71,13 +86,14 @@ class TestAPI(unittest.TestCase):
         # to use a proper event loop -- but that's then hard for termination
         # detection, perhaps.
         rc = None
-        for i in range(5):
+        for i in range(self.retries):
             message, properties, body = self._channel.basic_get("result")
             if message is not None:
                 rc = json.loads(body)
                 break
             else:
-                time.sleep(1)
+                print("backoff")
+                time.sleep(self.backoff)
         self.assertIsNotNone(rc)
 
         # check we got a valid results dict back
