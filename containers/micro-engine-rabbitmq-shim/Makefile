@@ -19,10 +19,7 @@
 
 # ---------- Sources ----------
 
-SOURCES = \
-	micro_engine_rabbitmq_shim/app.py
-
-TEST_APP_INSTANCE = micro_engine:app
+SOURCES = micro_engine_rabbitmq_shim/app.py
 
 
 # ---------- Tools ----------
