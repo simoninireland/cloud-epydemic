@@ -20,6 +20,7 @@
 # ---------- Sources ----------
 
 CLUSTER_YAML = cloud-epydemic.yaml
+NAMESPACE = cloudepydemic
 
 
 # ---------- Resources----------
@@ -32,6 +33,7 @@ RABBITMQ_OPERATOR = https://github.com/rabbitmq/cluster-operator/releases/latest
 
 MINIKUBE = minikube
 KUBECTL = kubectl
+HELM = helm
 
 
 # ---------- Targets ----------
