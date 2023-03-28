@@ -19,10 +19,7 @@
 
 # ---------- Sources ----------
 
-SOURCES = \
-	api_engine.api.py
-
-TEST_APP_INSTANCE = micro_engine:app
+SOURCES = api_engine/api.py
 
 
 # ---------- Tools ----------
@@ -42,7 +39,7 @@ DEV_REQUIREMENTS = dev-requirements.txt
 # ---------- Constructed commands ----------
 
 ACTIVATE = . $(VENV)/bin/activate
-CONTAINERS = test/containers.sh
+CONTAINERS = ../micro-engine-rabbitmq-shim/test/containers.sh
 RUN_TESTS = $(PYTHON) -m unittest discover -s test
 
 
@@ -57,7 +54,9 @@ $(VENV):
 
 .PHONY: test
 test: env
+	$(CONTAINERS) start
 	$(ACTIVATE) && $(RUN_TESTS)
+	$(CONTAINERS) stop
 
 .PHONY: reallyclean
 reallyclean:

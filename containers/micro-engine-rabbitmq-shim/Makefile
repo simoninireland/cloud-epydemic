@@ -54,8 +54,9 @@ $(VENV):
 
 .PHONY: test
 test: env
-	$(CONTAINERS) start && sleep 5
-	$(ACTIVATE) && $(RUN_TESTS) ; $(CONTAINERS) stop
+	$(CONTAINERS) start
+	$(ACTIVATE) && $(RUN_TESTS)
+	$(CONTAINERS) stop
 
 .PHONY: reallyclean
 reallyclean:
