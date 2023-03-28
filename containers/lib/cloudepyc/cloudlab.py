@@ -205,7 +205,7 @@ class CloudLab(Lab):
                     except KeyError as e:
                         # we were sent a result we don't recognise -- i.e., one
                         # that is not in any of our result sets
-                        logger.warning(f'Job {j} not recognised -- discarded')
+                        logger.error(f'Job {j} not recognised -- discarded')
 
                     # record that we retrieved the results for the given job
                     n = n + 1
