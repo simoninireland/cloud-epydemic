@@ -58,7 +58,7 @@ if [ "$command" == "start" ]; then
     docker run --rm -it -d --network $NETWORK $ENV --name shim $SHIM >>$PIDS
 
     # start the gateway
-    docker run --rm -it -d --network $NETWORK $ENV --name gateway $GATEWAY >>$PIDS
+    docker run --rm -it -d --network $NETWORK -p 5000:5000 $ENV --name gateway $GATEWAY >>$PIDS
 elif [ "$command" == "stop" ]; then
     # kill all the containers
     if [ -e $PIDS ]; then
