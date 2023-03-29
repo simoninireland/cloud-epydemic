@@ -47,12 +47,16 @@ class CloudLab(Lab):
     """
 
     # Tuning parameters
-    WaitingTime: int = 30           #: Waiting time for checking for job completion. Lower values increase network traffic.
+    WaitingTime: int = 30           #: Waiting time in seconds for checking job completion.
 
 
     def __init__(self, url, notebook: LabNotebook = None):
         """Create an empty lab attached to the given cluster. The
         cluster is specified with a web API endpoint.
+
+        The endpoint should be the "base" API endpoint, probably
+        of the form "https;//host:5000/api", onto which the
+        client will build the API calls.
 
         :param url: API endpoint
         :param notebook: the notebook used to results (defaults to an empty :class:`LabNotebook`)"""
