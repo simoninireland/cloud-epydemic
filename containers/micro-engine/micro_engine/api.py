@@ -32,8 +32,8 @@ def runExperiment(submission):
     a base64-encoded pickled epyc.Experiment object that defines
     the experiment to be run.
 
-    @param params: experimental parameters
-    @returns: the results dict'''
+    :param params: experimental parameters
+    :returns: the results dict'''
 
     # extract the experiment ID
     id = submission['experiment-id']

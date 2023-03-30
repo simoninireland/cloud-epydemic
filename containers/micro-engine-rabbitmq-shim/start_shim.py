@@ -59,10 +59,10 @@ def requestHandler(ch, method, properties, body):
     path, with the returned results dict being set as a message
     on the reesult channel. The request message is then acknowledged.
 
-    @param ch: the channel
-    @param method: the method identifier
-    @param properties: the method properties
-    @param body: the method body"""
+    :param ch: the channel
+    :param method: the method identifier
+    :param properties: the method properties
+    :param body: the method body"""
     tag = method.delivery_tag
     logger.info(f"Request {tag} received")
     start = datetime.now()

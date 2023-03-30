@@ -43,8 +43,8 @@ EXPERIMENT_ID = "epyc.experiment.id"
 def connect(endpoint):
     '''Connect to the RabbitMQ endpoint.
 
-    @param endpoint: the endpoint
-    @returns: the channel'''
+    :param endpoint: the endpoint
+    :returns: the channel'''
     logger.info(f"Connecting to {rabbitmq}")
     connection = pika.BlockingConnection(pika.URLParameters(rabbitmq))
     channel = connection.channel()
@@ -62,7 +62,7 @@ def runExperimentAsync(submission):
     '''Run an experiment asynchronously. The experiment is submitted
     to the message broker's request channel.
 
-    @param submission: experiment and its parameters'''
+    :param submission: experiment and its parameters'''
     channel = connect(rabbitmq)
     args = json.dumps(submission)
     channel.basic_publish(exchange='',
@@ -78,7 +78,7 @@ def getPendingResults():
     '''Retrieve all pending results. This reads messages from the
     message broker's result channel and returns them as an array.
 
-    @returns: an array of results'''
+    :returns: an array of results'''
     channel = connect(rabbitmq)
     results = []
     message = 1
