@@ -142,7 +142,14 @@ class CloudLab(Lab):
 
         :param quiet: if True, suppresses messages (defaults to False)
         :returns: a context manager"""
-        pass
+        raise NotImplementedError("sync_imports")
+
+    def sync_code(self, code: str, quiet : bool =- False):
+        """Import the given Python code onto all engines.
+
+        :param code: the code
+        :param quiet: it true, suppress messages (defaults to False)"""
+        raise NotImplementedError("sync_code")
 
 
     # ---------- Running experiments ----------
