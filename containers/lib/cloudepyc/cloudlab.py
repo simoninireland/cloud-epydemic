@@ -26,7 +26,8 @@ import uuid
 import time
 import requests
 from contextlib import AbstractContextManager
-from epyc import Logger, Lab, LabNotebook, Experiment
+from epyc import Logger, Lab, LabNotebook, Experiment, ExperimentalParameters, ResultsDict
+from typing import List, Any
 
 logger = logging.getLogger(Logger)
 
@@ -78,7 +79,7 @@ class CloudLab(Lab):
         u = uuid.uuid4()
         return str(u)
 
-    def runExperimentAsync(self, e, params):
+    def runExperimentAsync(self, e: Experiment, params: ExperimentalParameters) -> Any:
         '''Run an experiment asynchronously.
 
         The experiment is submitted to the message broker's request channel,
@@ -109,7 +110,7 @@ class CloudLab(Lab):
         # return the experiment identifier
         return j
 
-    def getPendingResults(self):
+    def getPendingResults(self) -> List[ResultsDict]:
         '''Retrieve all pending results.
 
         This reads messages from the message broker's result channel
@@ -157,7 +158,6 @@ class CloudLab(Lab):
         answer, so we can plot them and see the answer emerge.
 
         :param e: the experiment"""
-        self.open()
 
         # create the experimental parameter space
         eps = self.experiments(e)
@@ -167,6 +167,8 @@ class CloudLab(Lab):
             nb = self.notebook()
 
             try:
+                self.open()
+
                 # submit an experiment at each point in the parameter space
                 try:
                     for (ep, p) in eps:
