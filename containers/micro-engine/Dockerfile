@@ -34,10 +34,7 @@ ARG EPYDEMIC_USER="epydemic"
 
 # Install the HDF5 libraries needed by epyc
 USER root
-RUN <<EOF
-apt update
-apt-get install -y hdf5-tools
-EOF
+RUN apt update && apt-get install -y hdf5-tools && apt-get clean
 
 # Add a user
 ENV EPYDEMIC_USER="$EPYDEMIC_USER"
