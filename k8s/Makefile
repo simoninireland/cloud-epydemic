@@ -53,5 +53,8 @@ stop:
 deploy:
 	$(KUBECTL) apply -f $(CLUSTER_YAML)
 
-reallyclean:
+clean:
 	$(KUBECTL) delete ns $(NAMESPACE)
+
+reallyclean:
+	$(MINIKUBE) delete
