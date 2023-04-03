@@ -19,7 +19,5 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-sleep 10
-
 # Run the shim script
 exec python ./start_shim.py
