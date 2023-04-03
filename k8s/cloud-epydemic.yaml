@@ -55,6 +55,12 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 5000
+        env:
+        - name: EPYDEMIC_ENGINE_LOGLEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: engine.loglevel
       - name: micro-engine-rabbitmq-shim
         image: simoninireland/micro-engine-rabbitmq-shim:latest
         imagePullPolicy: Never
@@ -69,6 +75,11 @@ spec:
             configMapKeyRef:
               name: config
               key: broker.endpoint
+        - name: RABBITMQ_LOGLEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: broker.loglevel
         - name: RABBITMQ_REQUEST_QUEUE
           valueFrom:
             configMapKeyRef:
@@ -144,6 +155,11 @@ spec:
             configMapKeyRef:
               name: config
               key: broker.endpoint
+        - name: RABBITMQ_LOGLEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: broker.loglevel
         - name: RABBITMQ_REQUEST_QUEUE
           valueFrom:
             configMapKeyRef:
@@ -159,6 +175,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: gateway-service
+  namespace: cloudepydemic
   labels:
     app: cluster
     component: gateway-service
@@ -175,8 +192,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
   namespace: cloudepydemic
   labels:
     app: cluster
@@ -208,3 +223,5 @@ data:
   broker.queues.request: request
   broker.queues.result: result
   gateway.endpoint: http://gateway-service:5000/api/v1
+  broker.loglevel: "10"                                # 10=DEBUG, 20=INFO, 30=WARNING
+  engine.loglevel: "10"                                # 10=DEBUG, 20=INFO, 30=WARNING

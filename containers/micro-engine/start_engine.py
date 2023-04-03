@@ -23,17 +23,15 @@ import os
 import logging
 import logging.handlers
 
+
+# Grab environment variables
+logLevel = os.environ.get("EPYDEMIC_ENGINE_LOGLEVEL", logging.INFO)
+
 # Set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-LOG_FILENAME = os.environ.get('EPYDEMIC_LOGFILE') or 'micro-engine.log'
-handler = logging.handlers.TimedRotatingFileHandler(LOG_FILENAME,
-                                                    when='midnight',
-                                                    backupCount=7)
-formatter = logging.Formatter('%(levelname)s:%(name)s: [%(asctime)s] %(message)s',
-                              datefmt='%d/%b/%Y %H:%M:%S')
-logger.addHandler(handler)
-handler.setFormatter(formatter)
+logger.setLevel(logLevel)
+ch = logging.StreamHandler()
+logger.addHandler(ch)
 
 # create the Flask app
 import micro_engine

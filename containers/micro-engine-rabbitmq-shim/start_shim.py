@@ -27,6 +27,7 @@ from datetime import datetime
 import logging
 import logging.handlers
 import pika
+from retry import retry
 import requests
 
 
@@ -35,22 +36,31 @@ endpoint = os.environ["EPYDEMIC_ENGINE_API_ENDPOINT"]
 rabbitmq = os.environ["RABBITMQ_ENDPOINT"]
 requestQueue = os.environ["RABBITMQ_REQUEST_QUEUE"]
 resultQueue = os.environ["RABBITMQ_RESULT_QUEUE"]
+logLevel = os.environ.get("RABBITMQ_LOGLEVEL", logging.INFO)
 retries = 5
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logLevel)
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
-LOG_FILENAME = os.environ.get('LOGFILE') or 'shim.log'
-handler = logging.handlers.TimedRotatingFileHandler(LOG_FILENAME,
-                                                    when='midnight',
-                                                    backupCount=7)
-formatter = logging.Formatter('%(levelname)s:%(name)s: [%(asctime)s] %(message)s',
-                              datefmt='%d/%b/%Y %H:%M:%S')
-logger.addHandler(handler)
-handler.setFormatter(formatter)
+
+# Connect to Rabbitmq
+@retry(tries=5, delay=1, backoff=3, logger=logger)
+def connect(endpoint):
+    '''Connect to the RabbitMQ endpoint.
+
+    :param endpoint: the endpoint
+    :returns: the channel'''
+    logger.info(f"Connecting to {rabbitmq}")
+    connection = pika.BlockingConnection(pika.URLParameters(rabbitmq))
+    channel = connection.channel()
+    logger.info(f"Connected")
+
+    # ensure the queues exist
+    for ch in ["request", "result"]:
+        channel.queue_declare(queue=ch)
+    return channel
 
 # Define the callback
 def requestHandler(ch, method, properties, body):
@@ -84,26 +94,7 @@ def requestHandler(ch, method, properties, body):
     logger.info(f"Request {tag} completed (elapsed time = {dt}")
 
 # Connect to RabbitMQ
-logger.info(f"Connecting to {rabbitmq}")
-connection = None
-channel = None
-for i in range(retries):
-    try:
-        connection = pika.BlockingConnection(pika.URLParameters(rabbitmq))
-        channel = connection.channel()
-        break
-    except Exception as e:
-        logger.warning(f"Failed to connect ({e}); re-trying...")
-        time.sleep(5)
-if connection is None:
-    logger.info(f"Failed to connect to {rabbitmq}")
-    sys.exit(1)
-logger.info(f"Connected")
-
-# Ensure the channels exist
-for ch in [requestQueue, resultQueue]:
-    logger.info(f"Creating queue {ch}")
-    channel.queue_declare(queue=ch)
+channel = connect(rabbitmq)
 
 # Register the callback for incoming requests
 channel.basic_consume(queue=requestQueue,

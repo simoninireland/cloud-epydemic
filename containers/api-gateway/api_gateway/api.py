@@ -28,15 +28,20 @@ from retry import retry
 import pika
 from epyc import Experiment
 
-logger = logging.getLogger(__name__)
-
 
 # Grab environment variables
 rabbitmq = os.environ["RABBITMQ_ENDPOINT"]
 requestQueue = os.environ["RABBITMQ_REQUEST_QUEUE"]
 resultQueue = os.environ["RABBITMQ_RESULT_QUEUE"]
+logLevel = os.environ.get("RABBITMQ_LOGLEVEL", logging.INFO)
 
 EXPERIMENT_ID = "epyc.experiment.id"
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logLevel)
+ch = logging.StreamHandler()
+logger.addHandler(ch)
 
 
 @retry(tries=5, delay=1, backoff=3, logger=logger)
@@ -65,6 +70,8 @@ def runExperimentAsync(submission):
     :param submission: experiment and its parameters'''
     channel = connect(rabbitmq)
     args = json.dumps(submission)
+    logger.info("runExperimentAsync()")
+    logger.debug(str(args))
     channel.basic_publish(exchange='',
                           routing_key=requestQueue,
                           body=args)
@@ -80,6 +87,7 @@ def getPendingResults():
 
     :returns: an array of results'''
     channel = connect(rabbitmq)
+    logger.info("getPendingResults()")
     results = []
     message = 1
     while message is not None:
