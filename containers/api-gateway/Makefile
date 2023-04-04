@@ -35,22 +35,29 @@ VENV = venv3
 REQUIREMENTS = requirements.txt
 DEV_REQUIREMENTS = dev-requirements.txt
 
+# Test CA
+ROOT = $(shell cd .. && pwd)
+CA = $(ROOT)/testca
+
 
 # ---------- Constructed commands ----------
 
 ACTIVATE = . $(VENV)/bin/activate
-CONTAINERS = ../micro-engine-rabbitmq-shim/test/containers.sh
+MKCA = ../mkca.sh
+CONTAINERS = ../containers.sh
 RUN_TESTS = $(PYTHON) -m unittest discover -s test
 
 
 # ---------- Targets ----------
 
 .PHONY: env
-env: $(VENV)
+env: $(VENV) $(CA)
 $(VENV):
 	$(PYTHON) -m venv venv3
 	$(ACTIVATE) && pip install -U pip wheel
 	$(ACTIVATE) && pip install -r $(REQUIREMENTS) && pip install -r $(DEV_REQUIREMENTS)
+$(CA):
+	$(MKCA) $(CA)
 
 .PHONY: test
 test: env
@@ -58,6 +65,10 @@ test: env
 	$(ACTIVATE) && PYTHONPATH=../lib $(RUN_TESTS)
 	$(CONTAINERS) stop
 
+.PHONY: clean
+clean:
+	$(RM) $(CA)
+
 .PHONY: reallyclean
-reallyclean:
+reallyclean: clean
 	$(RM) $(VENV)
