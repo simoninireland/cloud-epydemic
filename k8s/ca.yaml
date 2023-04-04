@@ -1,0 +1,84 @@
+# -*- mode: k8s; -*-
+#
+# Kubernetes deployment for certificate management
+#
+# Copyright (C) 2023 Simon Dobson
+#
+# This file is part of cloud-epydemic, network simulation as a service
+#
+# cloud-epydemic is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published byf
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# cloud-epydemic is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
+
+# This version uses self-signed certificates, which is fine for
+# development but would need to be upgraded for production
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: my-selfsigned-ca
+  namespace: cloudepydemic
+spec:
+  isCA: true
+  commonName: my-selfsigned-ca
+  secretName: root-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: my-ca-issuer
+  namespace: cloudepydemic
+spec:
+  ca:
+    secretName: root-secret
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: broker-cert
+  namespace: cloudepydemic
+spec:
+  secretName: broker-secret
+  dnsNames:
+    - "*.cloudepydemic.svc.cluster.local"
+  duration: 24h
+  renewBefore: 12h
+  issuerRef:
+    kind: Issuer
+    name: my-ca-issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gateway-cert
+  namespace: cloudepydemic
+spec:
+  secretName: gateway-secret
+  duration: 24h
+  renewBefore: 12h
+  issuerRef:
+    kind: Issuer
+    name: my-ca-issuer
