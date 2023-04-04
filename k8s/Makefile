@@ -28,6 +28,9 @@ NAMESPACE = cloudepydemic
 # RabbitMQ operator
 RABBITMQ_OPERATOR = https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml
 
+# cert-manager operator
+CERTMANAGER_OPERATOR = https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
+
 
 # ---------- Tools ----------
 
@@ -44,6 +47,7 @@ start:
 	$(MINIKUBE) addons enable metrics-server
 	$(MINIKUBE) addons enable ingress
 	$(KUBECTL) apply -f $(RABBITMQ_OPERATOR)
+	$(KUBECTL) apply -f $(CERTMANAGER_OPERATOR)
 	nohup $(MINIKUBE) dashboard &
 
 .PHONY: stop
