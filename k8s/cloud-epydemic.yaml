@@ -114,9 +114,13 @@ spec:
       vm_memory_high_watermark_paging_ratio = 0.99
       disk_free_limit.relative = 1.0
       collect_statistics_interval = 10000
+      ssl_options.fail_if_no_peer_cert = true
   persistence:
     storageClassName: standard
     storage: "50M"
+  tls:
+    secretName: broker-secret
+    caSecretName: root-secret
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -170,6 +174,11 @@ spec:
             configMapKeyRef:
               name: config
               key: broker.queues.result
+        - name: RABBITMQ_CLIENT_CERT
+          valueFrom:
+            secretKeyRef:
+              name: gateway-secret
+              key: tls.crt
 ---
 apiVersion: v1
 kind: Service
@@ -217,11 +226,11 @@ metadata:
     app: cluster
     component: cluster-config
 data:
+  gateway.endpoint: http://gateway-service:5000/api/v1
   engine.endpoint.local: http://localhost:5000/api/v1  # access web API from shim (in the same pod)
   engine.endpoint: http://micro-engine:5000/api/v1
+  engine.loglevel: "10"                                # 10=DEBUG, 20=INFO, 30=WARNING
   broker.endpoint: amqp://broker:5672
   broker.queues.request: request
   broker.queues.result: result
-  gateway.endpoint: http://gateway-service:5000/api/v1
   broker.loglevel: "10"                                # 10=DEBUG, 20=INFO, 30=WARNING
-  engine.loglevel: "10"                                # 10=DEBUG, 20=INFO, 30=WARNING
