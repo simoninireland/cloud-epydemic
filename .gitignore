@@ -129,3 +129,7 @@ nohup.out
 
 # Docker Hub and OCI credentials
 containers/credentials.sh
+
+# Test directories (when running in Docker)
+containers/rabbitmq/
+containers/testca/
