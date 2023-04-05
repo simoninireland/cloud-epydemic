@@ -26,6 +26,8 @@ import time
 from datetime import datetime
 import logging
 import logging.handlers
+from urllib.parse import urlparse
+import ssl
 import pika
 from retry import retry
 import requests
@@ -37,13 +39,20 @@ rabbitmq = os.environ["RABBITMQ_ENDPOINT"]
 requestQueue = os.environ["RABBITMQ_REQUEST_QUEUE"]
 resultQueue = os.environ["RABBITMQ_RESULT_QUEUE"]
 logLevel = os.environ.get("RABBITMQ_LOGLEVEL", logging.INFO)
-retries = 5
+caCertificate = os.environ["RABBITMQ_CACERT"]
+clientCertificate = os.environ["RABBITMQ_CLIENT_CERT"]
+clientKey = os.environ["RABBITMQ_CLIENT_KEY"]
 
 # Set up logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logLevel)
 ch = logging.StreamHandler()
 logger.addHandler(ch)
+
+# Set up TLS
+context = ssl.create_default_context(cafile=caCertificate)
+context.load_cert_chain(clientCertificate,
+                        keyfile=clientKey)
 
 # Connect to Rabbitmq
 @retry(tries=5, delay=1, backoff=3, logger=logger)
@@ -52,8 +61,19 @@ def connect(endpoint):
 
     :param endpoint: the endpoint
     :returns: the channel'''
+
+    # extract the elements from the endpoint
+    u = urlparse(rabbitmq)
+
+    # connect to broker using TLS
     logger.info(f"Connecting to {rabbitmq}")
-    connection = pika.BlockingConnection(pika.URLParameters(rabbitmq))
+    options = pika.SSLOptions(context, u.hostname)
+    credentials = pika.credentials.ExternalCredentials()
+    params = pika.ConnectionParameters(host=u.hostname,
+                                       port=u.port,
+                                       ssl_options=options,
+                                       credentials=credentials)
+    connection = pika.BlockingConnection(params)
     channel = connection.channel()
     logger.info(f"Connected")
 
