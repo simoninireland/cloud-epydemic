@@ -1,6 +1,6 @@
 # -*- mode: k8s; -*-
 #
-# Kubernetes deployment for namespace and configuration of cloud-epydemic
+# Kubernetes message broker deployment
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -19,24 +19,33 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-apiVersion: v1
-kind: Namespace
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
 metadata:
-  name: cloudepydemic
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: config
+  name: broker
   namespace: cloudepydemic
   labels:
     app: cluster
-    component: cluster-config
-data:
-  gateway.endpoint: http://gateway-service:5000/       # Endpoint for gateway
-  engine.endpoint.local: http://localhost:5000/        # Access to engines from shim (in the same pod)
-  engine.loglevel: DEBUG
-  broker.endpoint: amqp://broker.cloudepydemic.svc.cluster.local:5671/                 # RabbitMQ endpoint
-  broker.queues.request: request                       # Requests queue name
-  broker.queues.result: result                         # Results queue name
-  broker.loglevel: DEBUG
+    component: message-broker
+spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 1
+      memory: 256M
+    limits:
+      cpu: 1
+      memory: 1Gi
+  rabbitmq:
+    additionalConfig: |
+      cluster_partition_handling = pause_minority
+      vm_memory_high_watermark_paging_ratio = 0.99
+      disk_free_limit.relative = 1.0
+      collect_statistics_interval = 10000
+      ssl_options.fail_if_no_peer_cert = true
+  persistence:
+    storageClassName: standard
+    storage: "50M"
+  tls:
+    secretName: broker-secret
+    caSecretName: root-secret

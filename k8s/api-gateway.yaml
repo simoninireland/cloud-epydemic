@@ -1,0 +1,105 @@
+# -*- mode: k8s; -*-
+#
+# Kubernetes deployment for API gateway
+#
+# Copyright (C) 2023 Simon Dobson
+#
+# This file is part of cloud-epydemic, network simulation as a service
+#
+# cloud-epydemic is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published byf
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# cloud-epydemic is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: cloudepydemic
+  labels:
+    app: cluster
+    component: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cluster
+      component: gateway
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: cluster
+        component: gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: simoninireland/api-gateway:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+        env:
+        - name: RABBITMQ_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: broker.endpoint
+        - name: RABBITMQ_LOGLEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: engine.loglevel
+        - name: RABBITMQ_REQUEST_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: broker.queues.request
+        - name: RABBITMQ_RESULT_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: config
+              key: broker.queues.result
+        - name: RABBITMQ_CA_CERT
+          valueFrom:
+            secretKeyRef:
+              name: root-secret
+              key: ca.crt
+        - name: RABBITMQ_CLIENT_CERT
+          valueFrom:
+            secretKeyRef:
+              name: gateway-secret
+              key: tls.crt
+        - name: RABBITMQ_CLIENT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gateway-secret
+              key: tls.key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: cloudepydemic
+  labels:
+    app: cluster
+    component: gateway-service
+spec:
+  type: ClusterIP
+  selector:
+    app: cluster
+    component: gateway
+  ports:
+  - port: 5000
+    targetPort: 5000

@@ -19,7 +19,13 @@
 
 # ---------- Sources ----------
 
-CLUSTER_YAML = cloud-epydemic.yaml
+SOURCES = \
+	cloud-epydemic.yaml \
+	ca.yaml \
+	broker.yaml \
+	micro-engine.yaml \
+	api-gateway.yaml \
+	ingress.yaml
 NAMESPACE = cloudepydemic
 
 
@@ -34,6 +40,7 @@ CERTMANAGER_OPERATOR = https://github.com/cert-manager/cert-manager/releases/dow
 
 # ---------- Tools ----------
 
+XARGS = xargs -n 1
 MINIKUBE = minikube
 KUBECTL = kubectl
 HELM = helm
@@ -55,7 +62,7 @@ stop:
 	$(MINIKUBE) stop
 
 deploy:
-	$(KUBECTL) apply -f $(CLUSTER_YAML)
+	echo $(SOURCES) | $(XARGS) $(KUBECTL) apply -f
 
 clean:
 	$(KUBECTL) delete ns $(NAMESPACE)
