@@ -24,6 +24,8 @@ import base64
 import json
 import pickle
 import logging
+from tempfile import NamedTemporaryFile
+from urllib.parse import urlparse
 import ssl
 from retry import retry
 import pika
@@ -35,7 +37,7 @@ rabbitmq = os.environ["RABBITMQ_ENDPOINT"]
 requestQueue = os.environ["RABBITMQ_REQUEST_QUEUE"]
 resultQueue = os.environ["RABBITMQ_RESULT_QUEUE"]
 logLevel = os.environ.get("RABBITMQ_LOGLEVEL", logging.INFO)
-caCertificate = os.environ["RABBITMQ_CACERT"]
+caCertificate = os.environ["RABBITMQ_CA_CERT"]
 clientCertificate = os.environ["RABBITMQ_CLIENT_CERT"]
 clientKey = os.environ["RABBITMQ_CLIENT_KEY"]
 
@@ -47,30 +49,64 @@ logger.setLevel(logLevel)
 ch = logging.StreamHandler()
 logger.addHandler(ch)
 
+# Save certificates (provided as data) into temp files,
+# since SSL contexts require the data like this
+caCertificateFile = None
+clientCertificateFile = None
+clientKeyFile = None
+with NamedTemporaryFile(mode='w', delete=False) as fh:
+    caCertificateFile = fh.name
+    print(caCertificate, file=fh)
+with NamedTemporaryFile(mode='w', delete=False) as fh:
+    clientCertificateFile = fh.name
+    print(clientCertificate, file=fh)
+with NamedTemporaryFile(mode='w', delete=False) as fh:
+    clientKeyFile = fh.name
+    print(clientKey, file=fh)
+
 # Set up TLS
-context = ssl.create_default_context(cafile=caCertificate)
-context.load_cert_chain(clientCertificate,
-                        keyfile=clientKey)
-options = pika.SSLOptions(context)
+context = ssl.create_default_context(cafile=caCertificateFile)
+context.load_cert_chain(clientCertificateFile,
+                        keyfile=clientKeyFile)
 
 
 # ---------- Helper functions ----------
 
 @retry(tries=5, delay=1, backoff=3, logger=logger)
+def _connect(u):
+    '''Basic connection operation to connect to RabbitMQ endpoint.
+    This performs mTLS authentication.
+
+    :param u: the parsed URL of the endpoint
+    :returns: the channel'''
+
+    # connect to broker using TLS
+    options = pika.SSLOptions(context, u.hostname)
+    credentials = pika.credentials.ExternalCredentials()
+    params = pika.ConnectionParameters(host=u.hostname,
+                                       port=u.port,
+                                       ssl_options=options,
+                                       credentials=credentials)
+    connection = pika.BlockingConnection(params)
+    channel = connection.channel()
+
+    return channel
+
 def connect(endpoint):
-    '''Connect to the RabbitMQ endpoint.
+    '''Connect to the RabbitMQ message broker endpoint.
 
     :param endpoint: the endpoint
     :returns: the channel'''
-    logger.info(f"Connecting to {rabbitmq}")
-    connection = pika.BlockingConnection(pika.URLParameters(rabbitmq,
-                                                            ssl_options=options))
-    channel = connection.channel()
+
+    logger.info(f"Connecting to {endpoint}")
+    u = urlparse(endpoint)
+    channel = _connect(u)
     logger.info(f"Connected")
 
     # ensure the queues exist
     for ch in ["request", "result"]:
         channel.queue_declare(queue=ch)
+
     return channel
 
 
