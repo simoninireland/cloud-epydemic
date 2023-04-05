@@ -30,22 +30,14 @@ logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
-LOG_FILENAME = os.environ.get('LOGFILE') or 'api-gateway.log'
-handler = logging.handlers.TimedRotatingFileHandler(LOG_FILENAME,
-                                                    when='midnight',
-                                                    backupCount=7)
-formatter = logging.Formatter('%(levelname)s:%(name)s: [%(asctime)s] %(message)s',
-                              datefmt='%d/%b/%Y %H:%M:%S')
-logger.addHandler(handler)
-handler.setFormatter(formatter)
 
 # Application object
 conn = connexion.App(__name__, specification_dir='./')
 app = conn.app
 
 # Add API
-# The source of the OpenAPI  specification can be controlled
-# using the EPYDEMIC_OPENAPI  environment variable -- typically
+# The source of the OpenAPI specification can be controlled
+# using the EPYDEMIC_OPENAPI environment variable -- typically
 # this is only needed for testing
 api = os.environ.get("EPYDEMIC_OPENAPI", "./api.yaml")
 conn.add_api(api, resolver=RelativeResolver('api_gateway.api'))
