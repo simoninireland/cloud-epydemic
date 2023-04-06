@@ -46,6 +46,3 @@ spec:
   persistence:
     storageClassName: standard
     storage: "50M"
-  tls:
-    secretName: broker-secret
-    caSecretName: root-secret
