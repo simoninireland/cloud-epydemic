@@ -56,7 +56,6 @@ def _connect(u):
     :returns: the channel'''
 
     # connect to broker using TLS
-    options = pika.SSLOptions(context, u.hostname)
     params = pika.ConnectionParameters(host=u.hostname,
                                        port=u.port)
     connection = pika.BlockingConnection(params)
