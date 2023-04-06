@@ -57,6 +57,14 @@ MINIKUBE_PUSH = $(MINIKUBE) image load
 # The build context for the Dockerfiles is this directory, to
 # allow access to files in lib/
 
+# To build directly into a local minikube repo run:
+#
+# eval $(minikube docker-env)
+#
+# in the shell where you do the builds (i.e., where you run this
+# Makefile). This will make the iages directly available to
+# minikube without an explcit push.
+
 .PHONY: $(CONTAINERS)
 build: $(CONTAINERS)
 
