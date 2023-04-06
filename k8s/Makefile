@@ -37,6 +37,11 @@ RABBITMQ_OPERATOR = https://github.com/rabbitmq/cluster-operator/releases/latest
 # cert-manager operator
 CERTMANAGER_OPERATOR = https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
 
+# Minikube options
+MINIKUBE_OPTIONS = \
+	--memory=16384 \
+	--cpus=4
+
 
 # ---------- Tools ----------
 
@@ -50,7 +55,7 @@ HELM = helm
 
 .PHONY: start
 start:
-	$(MINIKUBE) start
+	$(MINIKUBE) start $(MINIKUBE_OPTIONS)
 	$(MINIKUBE) addons enable metrics-server
 	$(MINIKUBE) addons enable ingress
 	$(KUBECTL) apply -f $(RABBITMQ_OPERATOR)
