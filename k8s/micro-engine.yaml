@@ -90,3 +90,20 @@ spec:
             secretKeyRef:
               name: gateway-secret
               key: tls.crt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: micro-engine-service
+  namespace: cloudepydemic
+  labels:
+    app: cluster
+    component: micro-engine-service
+spec:
+  type: ClusterIP
+  selector:
+    app: cluster
+    component: micro-engine
+  ports:
+  - port: 5000
+    targetPort: 5000
