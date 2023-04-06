@@ -1,6 +1,6 @@
 # -*- mode: k8s; -*-
 #
-# Kubernetes deployment for namespace and configuration of cloud-epydemic
+# Kubernetes deployment for namespace
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -23,20 +23,3 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: cloudepydemic
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: config
-  namespace: cloudepydemic
-  labels:
-    app: cluster
-    component: cluster-config
-data:
-  gateway.endpoint: http://gateway-service:5000/       # Endpoint for gateway
-  engine.endpoint.local: http://localhost:5000/        # Access to engines from shim (in the same pod)
-  engine.loglevel: DEBUG
-  broker.endpoint: amqp://broker.cloudepydemic.svc.cluster.local:5671/                 # RabbitMQ endpoint
-  broker.queues.request: request                       # Requests queue name
-  broker.queues.result: result                         # Results queue name
-  broker.loglevel: DEBUG
