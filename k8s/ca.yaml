@@ -78,7 +78,8 @@ metadata:
 spec:
   secretName: gateway-secret
   dnsNames:
-  - "*.gateway.cloudepydemic.svc.cluster.local"
+  - "*.gateway-service.cloudepydemic.svc.cluster.local"
+  - "gateway-service.cloudepydemic.svc.cluster.local"
   - "gateway.cloudepydemic.svc.cluster.local"
   duration: 24h
   renewBefore: 12h

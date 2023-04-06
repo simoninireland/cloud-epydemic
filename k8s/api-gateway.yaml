@@ -20,9 +20,9 @@
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: gateway
+  name: gateway-server
   namespace: cloudepydemic
   labels:
     app: cluster
@@ -33,11 +33,7 @@ spec:
     matchLabels:
       app: cluster
       component: gateway
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
+  serviceName: gateway-service
   template:
     metadata:
       labels:
@@ -90,11 +86,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: gateway-service
+  name: gateway
   namespace: cloudepydemic
   labels:
     app: cluster
-    component: gateway-service
+    component: gateway
 spec:
   type: ClusterIP
   selector:
