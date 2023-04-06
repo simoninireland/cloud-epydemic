@@ -97,5 +97,7 @@ spec:
     app: cluster
     component: gateway
   ports:
-  - port: 5000
+  - name: http
+    port: 5000
+    protocol: TCP
     targetPort: 5000
