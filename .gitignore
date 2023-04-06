@@ -107,6 +107,7 @@ ENV/
 *~
 \#*\#
 TAGS
+flycheck_*
 
 # Profiling results
 *.pstats
