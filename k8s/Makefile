@@ -19,14 +19,18 @@
 
 # ---------- Sources ----------
 
+NAMESPACE = cloudepydemic
 SOURCES = \
-	cloud-epydemic.yaml \
+	$(APP) \
+	$(COMPONENTS)
+APP = $(NAMESPACE).yaml
+COMPONENTS = \
+	config.yaml \
 	ca.yaml \
 	broker.yaml \
 	micro-engine.yaml \
 	api-gateway.yaml \
 	ingress.yaml
-NAMESPACE = cloudepydemic
 
 
 # ---------- Resources----------
@@ -36,6 +40,10 @@ RABBITMQ_OPERATOR = https://github.com/rabbitmq/cluster-operator/releases/latest
 
 # cert-manager operator
 CERTMANAGER_OPERATOR = https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
+
+# Istio
+ISTIO_DOWNLOAD = https://istio.io/downloadIstio
+ISTIO_PROFILE = demo
 
 # Minikube options
 MINIKUBE_OPTIONS = \
@@ -48,7 +56,9 @@ MINIKUBE_OPTIONS = \
 XARGS = xargs -n 1
 MINIKUBE = minikube
 KUBECTL = kubectl
+ISTIOCTL = istio-*/bin/istioctl
 HELM = helm
+CURL = curl
 
 
 # ---------- Targets ----------
@@ -60,14 +70,20 @@ start:
 	$(MINIKUBE) addons enable ingress
 	$(KUBECTL) apply -f $(RABBITMQ_OPERATOR)
 	$(KUBECTL) apply -f $(CERTMANAGER_OPERATOR)
+	$(ISTIOCTL) install --set profile=$(ISTIO_PROFILE) -y
 	nohup $(MINIKUBE) dashboard &
 
 .PHONY: stop
 stop:
 	$(MINIKUBE) stop
 
+istio:
+	$(CURL) -L $(ISTIO_DOWNLOAD) | sh
+
 deploy:
-	echo $(SOURCES) | $(XARGS) $(KUBECTL) apply -f
+	$(KUBECTL) apply -f $(APP)
+	$(KUBECTL) label namespace $(NAMESPACE) istio-injection=enabled
+	echo $(COMPONENTS) | $(XARGS) $(KUBECTL) apply -f
 
 clean:
 	$(KUBECTL) delete ns $(NAMESPACE)
