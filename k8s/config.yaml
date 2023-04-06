@@ -1,0 +1,37 @@
+# -*- mode: k8s; -*-
+#
+# Kubernetes application configuration
+#
+# Copyright (C) 2023 Simon Dobson
+#
+# This file is part of cloud-epydemic, network simulation as a service
+#
+# cloud-epydemic is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published byf
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# cloud-epydemic is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: cloudepydemic
+  labels:
+    app: cluster
+    component: cluster-config
+data:
+  gateway.endpoint: http://gateway-service:5000/       # Endpoint for gateway
+  engine.endpoint.local: http://localhost:5000/        # Access to engines from shim (in the same pod)
+  engine.loglevel: DEBUG
+  broker.endpoint: amqp://broker.cloudepydemic.svc.cluster.local:5671/                 # RabbitMQ endpoint
+  broker.queues.request: request                       # Requests queue name
+  broker.queues.result: result                         # Results queue name
+  broker.loglevel: DEBUG
