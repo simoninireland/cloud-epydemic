@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Create a CA for testing
+# Create a PKI Certificate Authority (CA) for testing
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -19,11 +19,15 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-# This is required to test RabbotMQ interactions with mTLS.
+# This is required to test RabbitMQ interactions with mTLS.
 # See https://www.rabbitmq.com/ssl.html#manual-certificate-generation
 
-# Files and directories
-DIR="$1"
+# Directory
+if [ "$#" != 1 ]; then
+    echo "usage: $0 <ca-dir>"
+    exit 1
+fi
+DIR=`realpath $1`
 CA=`basename $DIR`
 
 # Test whether the CA exists
@@ -32,8 +36,9 @@ if [ -d "$DIR" ]; then
     exit 0
 fi
 
-# create the CA root
+# create the CA directory
 mkdir $DIR
+chmod a+x $DIR    # so we can mount the CA into a container
 cd $DIR
 mkdir certs private
 chmod 700 private
@@ -113,11 +118,14 @@ for i in "client" "server"; do
     # certificate request
     openssl genrsa -out $private_key 2048
     openssl req -new -key $private_key -out $certificate_request -outform PEM \
-	    -subj /CN=$(hostname)/O=$i/ -nodes
+	    -subj /CN=localhost/O=$i/ -nodes
 
     # signed certificate
     openssl ca -config openssl.cnf -in $certificate_request \
 	    -out $certificate -notext -batch -extensions $extensions
+
+    # make all the key elements readable (only safe because we're testing)
+    chmod a+r $certificate $private_key
 
     # tidy up
     rm $certificate_request
