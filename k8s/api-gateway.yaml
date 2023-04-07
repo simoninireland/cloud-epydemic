@@ -90,7 +90,7 @@ metadata:
   namespace: cloudepydemic
   labels:
     app: cluster
-    component: gateway
+    component: gateway-service
 spec:
   type: ClusterIP
   selector:

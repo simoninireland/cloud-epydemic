@@ -94,16 +94,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: micro-engine-service
+  name: engine-service
   namespace: cloudepydemic
   labels:
     app: cluster
-    component: micro-engine-service
+    component: engine-service
 spec:
   type: ClusterIP
   selector:
     app: cluster
-    component: micro-engine
+    component: engine
   ports:
   - name: http
     port: 5000

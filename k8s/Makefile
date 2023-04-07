@@ -51,6 +51,9 @@ MINIKUBE_OPTIONS = \
 	--memory=16384 \
 	--cpus=4
 
+# Helm
+HELM_RABBITMQ_CONF = rabbitmq.yaml
+
 
 # ---------- Tools ----------
 
@@ -69,9 +72,10 @@ start:
 	$(MINIKUBE) start $(MINIKUBE_OPTIONS)
 	$(MINIKUBE) addons enable metrics-server
 	$(MINIKUBE) addons enable ingress
-	$(KUBECTL) apply -f $(RABBITMQ_OPERATOR)
-	$(KUBECTL) apply -f $(CERTMANAGER_OPERATOR)
-	$(ISTIOCTL) install --set profile=$(ISTIO_PROFILE) -y
+	# $(KUBECTL) apply -f $(RABBITMQ_OPERATOR)
+	# $(KUBECTL) apply -f $(CERTMANAGER_OPERATOR)
+	# $(ISTIOCTL) install --set profile=$(ISTIO_PROFILE) -y
+	# $(HELM) install $(VERSION) -f $(HELM_RABBITMQ_CONF) -n $(NAMESPACE) my-repo/rabbitmq
 	nohup $(MINIKUBE) dashboard &
 
 .PHONY: stop
@@ -83,7 +87,7 @@ istio:
 
 deploy:
 	$(KUBECTL) apply -f $(APP)
-	$(KUBECTL) label namespace $(NAMESPACE) istio-injection=enabled
+	# $(KUBECTL) label namespace $(NAMESPACE) istio-injection=enabled
 	echo $(COMPONENTS) | $(XARGS) $(KUBECTL) apply -f
 
 clean: stop

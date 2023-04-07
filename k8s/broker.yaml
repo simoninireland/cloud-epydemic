@@ -7,7 +7,7 @@
 # This file is part of cloud-epydemic, network simulation as a service
 #
 # cloud-epydemic is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published byf
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
@@ -43,6 +43,16 @@ spec:
       disk_free_limit.relative = 1.0
       collect_statistics_interval = 10000
       ssl_options.fail_if_no_peer_cert = true
+      loopback_users.guest = false
   persistence:
     storageClassName: standard
     storage: "50M"
+  override:
+    statefulSet:
+      spec:
+        template:
+          metadata:
+            annotations:
+              # only redirect traffic on ports 15672 and 5672
+              traffic.sidecar.istio.io/includeInboundPorts: "15672, 5672"
+              traffic.sidecar.istio.io/includeOutboundPorts: "15672, 5672"

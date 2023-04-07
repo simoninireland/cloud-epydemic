@@ -1,17 +1,13 @@
 # -*- mode: k8s; -*-
 #
-<<<<<<< HEAD
 # Kubernetes application configuration
-=======
-# Kubernetes deployment for application configuration
->>>>>>> a2d98ae (Refactored config map)
 #
 # Copyright (C) 2023 Simon Dobson
 #
 # This file is part of cloud-epydemic, network simulation as a service
 #
 # cloud-epydemic is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published byf
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
@@ -30,12 +26,12 @@ metadata:
   namespace: cloudepydemic
   labels:
     app: cluster
-    component: cluster-config
+    component: config
 data:
   gateway.endpoint: http://gateway-service:5000/       # Endpoint for gateway
   engine.endpoint.local: http://localhost:5000/        # Access to engines from shim (in the same pod)
   engine.loglevel: DEBUG
-  broker.endpoint: amqp://broker:5671/                 # RabbitMQ endpoint
+  broker.endpoint: amqp://epydemic:secret@debug-rabbitmq:5672/                 # RabbitMQ endpoint
   broker.queues.request: request                       # Requests queue name
   broker.queues.result: result                         # Results queue name
   broker.loglevel: DEBUG

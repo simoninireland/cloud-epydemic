@@ -19,38 +19,22 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-apiVersion: networking.istio.io/v1alpha3
-kind: Gateway
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: cluster-ingress
+  name: ingress
+  namespace: cloudepydemic
+  labels:
+    app: cluster
+    component: ingress
 spec:
-  selector:
-    istio: ingressgateway     # use istio default controller
-  servers:
-  - port:
-      number: 80
-      name: http
-      protocol: HTTP
-    hosts:
-    - "*"
----
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
-metadata:
-  name: cluster-ingress-service
-spec:
-  hosts:
-  - "*"
-  gateways:
-  - cluster-ingress
-  http:
-  - match:
-    - uri:
-        exact: /
-    - uri:
-        prefix: /api/v1
-    route:
-    - destination:
-        host: gateway
-        port:
-          number: 5000
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gateway-service
+            port:
+              number: 5000
