@@ -33,7 +33,6 @@ LABEL maintainer="Simon Dobson <simon.dobson@st-andrews.ac.uk>"
 
 # Build-time arguments to configure the cluster
 ARG EPYDEMIC_USER="epydemic"
-ARG EPYDEMIC_PROFILE="epydemic"
 
 # Install the HDF5 libraries needed by epyc, and the other
 # libraries needed by ipyparallel and Jupyter
@@ -41,14 +40,13 @@ USER root
 RUN <<EOF
 apt update
 apt-get install -y hdf5-tools
-apt-get install -y ca-certificates locales fonts-liberation openssh-client
+apt-get install -y ca-certificates locales fonts-liberation
 EOF
 RUN echo "en_US.UTF-8 en_GB.UTF-8 UTF-8" >/etc/locale.gen && locale-gen
 
 # Add a user
 ENV EPYDEMIC_USER="$EPYDEMIC_USER"
 ENV EPYDEMIC_HOME="/home/$EPYDEMIC_USER"
-ENV EPYDEMIC_PROFILE="$EPYDEMIC_PROFILE"
 RUN useradd -m -d $EPYDEMIC_HOME -s /bin/bash $EPYDEMIC_USER
 
 # Install the additional Python dependencies
@@ -62,22 +60,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY base-notebook/start_notebook.sh .
 RUN chown $EPYDEMIC_USER start_notebook.sh
 RUN chmod u+x start_notebook.sh
-COPY lib/kv .
-RUN chown $EPYDEMIC_USER kv
-RUN chmod u+x kv
 
-# Switch to the non-root user
-USER $EPYDEMIC_USER
-
-# Create .ssh/
-RUN mkdir .ssh
-RUN chmod go-rwx .ssh
-
-# Create mount point for the notebooks and data storage
-# (This will typically have a persistent volume mounted on it)
-ENV EPYDEMIC_DATA=$EPYDEMIC_HOME/data
+# Create the mount point for the notebooks and data
+# (This will usually have a persistent volume mounted onto it)
+ENV EPYDEMIC_DATA="/var/jupyter"
 RUN mkdir $EPYDEMIC_DATA
+RUN chown $EPYDEMIC_USER $EPYDEMIC_DATA
+RUN chmod a+x $EPYDEMIC_DATA
+
+# Expose the notebook server port
+EXPOSE 8888
 
 # Run the server
-EXPOSE 8888
+USER $EPYDEMIC_USER
 ENTRYPOINT ["./start_notebook.sh"]
