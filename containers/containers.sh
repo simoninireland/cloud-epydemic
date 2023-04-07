@@ -24,7 +24,7 @@ REPO_USER=simoninireland
 NETWORK=cloudepydemic
 ENGINE=$REPO_USER/micro-engine
 SHIM=$REPO_USER/micro-engine-rabbitmq-shim
-BROKER=rabbitmq
+BROKER=$REPO_USER/rabbitmq-tls
 GATEWAY=$REPO_USER/api-gateway
 
 # Pid file
@@ -46,10 +46,7 @@ ENV="-e EPYDEMIC_ENGINE_API_ENDPOINT=http://engine:5000/api/v1 \
 
 # RabbitMQ conf
 RABBITMQ_CONTAINER_CA_DIR=/var/ca
-RABBITMQ_CONF_DIR="$ROOT/rabbitmq"
-RABBITMQ_CONTAINER_CONF_DIR=/etc/rabbitmq/conf.d/tls
 RABBITMQ_CA_MOUNT="--mount type=bind,src=$CA,dst=$RABBITMQ_CONTAINER_CA_DIR"
-RABBITMQ_CONF_MOUNT="--mount type=bind,src=$RABBITMQ_CONF_DIR,dst=$RABBITMQ_CONTAINER_CONF_DIR"
 
 # Switch on first argument
 command=$1
@@ -60,22 +57,6 @@ if [ "$command" == "start" ]; then
 	$0 stop
     fi
 
-    # construct the RabboitMQ config file
-    mkdir -p $RABBITMQ_CONF_DIR
-    cat >$RABBITMQ_CONF_DIR/tls.conf <<EOF
-loopback_users.guest = false
-
-listeners.tcp = none
-listeners.ssl.default = 5671
-
-ssl_options.verify = verify_peer
-ssl_options.fail_if_no_peer_cert = true
-
-ssl_options.cacertfile = $RABBITMQ_CONTAINER_CA_DIR/ca_certificate.pem
-ssl_options.certfile = $RABBITMQ_CONTAINER_CA_DIR/server_certificate.pem
-ssl_options.keyfile = $RABBITMQ_CONTAINER_CA_DIR/server_private_key.pem
-EOF
-
     # create a network for the containers to share
     docker network create $NETWORK
 
@@ -83,13 +64,16 @@ EOF
     docker run --rm -it -d $ENV --network $NETWORK --name engine $ENGINE >>$PIDS
 
     # start the broker
-    docker run --rm -it -d $ENV $RABBITMQ_CONF_MOUNT $RABBITMQ_CA_MOUNT --network $NETWORK -p 5672:5672 --name broker $BROKER >>$PIDS
+    docker run --rm -it -d $ENV $RABBITMQ_CA_MOUNT --network $NETWORK \
+	   -p 5671:5671 --name broker $BROKER >>$PIDS
 
     # start the shim
-    docker run --rm -it -d $ENV $RABBITMQ_CA_MOUNT --network $NETWORK --name shim $SHIM >>$PIDS
+    docker run --rm -it -d $ENV $RABBITMQ_CA_MOUNT --network $NETWORK \
+	   --name shim $SHIM >>$PIDS
 
     # start the gateway
-    docker run --rm -it -d $ENV $RABBITMQ_CA_MOUNT --network $NETWORK -p 5000:5000 --name gateway $GATEWAY >>$PIDS
+    docker run --rm -it -d $ENV $RABBITMQ_CA_MOUNT --network $NETWORK \
+	   -p 5000:5000 --name gateway $GATEWAY >>$PIDS
 elif [ "$command" == "stop" ]; then
     # kill all the containers
     if [ -e $PIDS ]; then
