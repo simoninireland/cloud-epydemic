@@ -1,0 +1,6 @@
+# Emacs (and other) backup files
+*.bak
+*~
+\#*\#
+TAGS
+flycheck_*

@@ -26,7 +26,6 @@ import pickle
 import logging
 from tempfile import NamedTemporaryFile
 from urllib.parse import urlparse
-import ssl
 from retry import retry
 import pika
 from epyc import Experiment
@@ -37,9 +36,6 @@ rabbitmq = os.environ["RABBITMQ_ENDPOINT"]
 requestQueue = os.environ["RABBITMQ_REQUEST_QUEUE"]
 resultQueue = os.environ["RABBITMQ_RESULT_QUEUE"]
 logLevel = os.environ.get("RABBITMQ_LOGLEVEL", logging.INFO)
-caCertificate = os.environ["RABBITMQ_CA_CERT"]
-clientCertificate = os.environ["RABBITMQ_CLIENT_CERT"]
-clientKey = os.environ["RABBITMQ_CLIENT_KEY"]
 
 EXPERIMENT_ID = "epyc.experiment.id"
 
@@ -49,43 +45,21 @@ logger.setLevel(logLevel)
 ch = logging.StreamHandler()
 logger.addHandler(ch)
 
-# Save certificates (provided as data) into temp files,
-# since SSL contexts require the data like this
-caCertificateFile = None
-clientCertificateFile = None
-clientKeyFile = None
-with NamedTemporaryFile(mode='w', delete=False) as fh:
-    caCertificateFile = fh.name
-    print(caCertificate, file=fh)
-with NamedTemporaryFile(mode='w', delete=False) as fh:
-    clientCertificateFile = fh.name
-    print(clientCertificate, file=fh)
-with NamedTemporaryFile(mode='w', delete=False) as fh:
-    clientKeyFile = fh.name
-    print(clientKey, file=fh)
-
-# Set up TLS
-context = ssl.create_default_context(cafile=caCertificateFile)
-context.load_cert_chain(clientCertificateFile,
-                        keyfile=clientKeyFile)
-
 
 # ---------- Helper functions ----------
 
 @retry(tries=5, delay=1, backoff=3, logger=logger)
 def _connect(u):
     '''Basic connection operation to connect to RabbitMQ endpoint.
-    This performs mTLS authentication.
 
     :param u: the parsed URL of the endpoint
     :returns: the channel'''
 
-    # connect to broker using TLS
-    options = pika.SSLOptions(context, u.hostname)
-    credentials = pika.credentials.ExternalCredentials()
+    # connect to broker
+    credentials = pika.credentials.PlainCredentials(u.username,
+                                                    u.password)
     params = pika.ConnectionParameters(host=u.hostname,
                                        port=u.port,
-                                       ssl_options=options,
                                        credentials=credentials)
     connection = pika.BlockingConnection(params)
     channel = connection.channel()

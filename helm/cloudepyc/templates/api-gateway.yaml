@@ -1,0 +1,105 @@
+# -*- mode: k8s; -*-
+#
+# Kubernetes manifest for API gateway service
+#
+# Copyright (C) 2023 Simon Dobson
+#
+# This file is part of cloud-epydemic, network simulation as a service
+#
+# cloud-epydemic is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# cloud-epydemic is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
+
+{{- if .Values.components.gateway.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.components.gateway.pods.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+    component: {{ .Values.components.gateway.name }}
+    {{- include "common.labels.standard" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- if .Values.commonAnnotationms }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.components.gateway.pods.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+      component: {{ .Values.components.gateway.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+        component: {{ .Values.components.gateway.name }}
+    spec:
+      containers:
+      - name: {{ .Values.components.gateway.name }}-microservice
+        image: {{ .Values.components.gateway.pods.image }}
+        imagePullPolicy: {{ .Values.components.gateway.pods.imagePullPolicy }}
+        ports:
+        - containerPort: 5000
+        env:
+        - name: RABBITMQ_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.gateway.pods.configMap }}
+              key: broker.endpoint
+        - name: RABBITMQ_LOGLEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.gateway.pods.configMap }}
+              key: engine.loglevel
+        - name: RABBITMQ_REQUEST_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.gateway.pods.configMap }}
+              key: broker.queues.request
+        - name: RABBITMQ_RESULT_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.gateway.pods.configMap }}
+              key: broker.queues.result
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.components.gateway.service.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+    component: {{ .Values.components.gateway.service.name }}
+    {{- include "common.labels.standard" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- if .Values.commonAnnotationms }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ .Values.components.gateway.service.type }}
+  selector:
+    app: {{ .Release.Name }}
+    component: {{ .Values.components.gateway.name }}
+  ports:
+  - name: http
+    port: 5000
+    protocol: TCP
+    targetPort: 5000
+{{- end }}

@@ -1,0 +1,124 @@
+# -*- mode: k8s; -*-
+#
+# Kubernetes manifest for engine microservices
+#
+# Copyright (C) 2023 Simon Dobson
+#
+# This file is part of cloud-epydemic, network simulation as a service
+#
+# cloud-epydemic is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# cloud-epydemic is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
+
+{{- if .Values.components.engine.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.components.engine.pods.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+    component: {{ .Values.components.engine.name }}
+    {{- include "common.labels.standard" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- if .Values.commonAnnotationms }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.components.engine.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+      component: {{ .Values.components.engine.name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+        component: {{ .Values.components.engine.name }}
+    spec:
+      containers:
+      - name: {{ .Values.components.engine.name }}-microservice
+        image: {{ .Values.components.engine.pods.image }}
+        imagePullPolicy: {{ .Values.components.engine.pods.imagePullPolicy }}
+        ports:
+        - containerPort: 5000
+        env:
+        - name: EPYDEMIC_ENGINE_LOGLEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.engine.pods.configMap }}
+              key: engine.loglevel
+      - name: {{ .Values.components.engine.name }}-shim
+        image:  {{ .Values.components.engine.shim.image }}
+        imagePullPolicy: {{ .Values.components.engine.shim.imagePullPolicy }}
+        env:
+        - name: EPYDEMIC_ENGINE_API_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
+              key: engine.endpoint.local
+        - name: RABBITMQ_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
+              key: broker.endpoint
+        - name: RABBITMQ_LOGLEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
+              key: engine.loglevel
+        - name: RABBITMQ_REQUEST_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
+              key: broker.queues.request
+        - name: RABBITMQ_RESULT_QUEUE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
+              key: broker.queues.result
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.components.engine.service.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}
+    component: {{ .Values.components.engine.service.name }}
+    {{- include "common.labels.standard" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- if .Values.commonAnnotationms }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ .Values.components.engine.service.type }}
+  selector:
+    app: {{ .Release.Name }}
+    component: {{ .Values.components.engine.name }}
+  ports:
+  - name: http
+    port: 5000
+    protocol: TCP
+    targetPort: 5000
+{{- end }}

@@ -17,6 +17,24 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+
+# ---------- Notes ----------
+
+# The build context for the Dockerfiles is this directory, to
+# allow access to files in lib/
+
+# To build directly into a local minikube repo run:
+#
+# eval $(minikube docker-env)
+#
+# in the shell where you do the builds (i.e., where you run this
+# Makefile). This will make the images directly available to
+# minikube without an explcit push.
+#
+# A container rebuild is needed after every full restart of minikube,
+# as the repo doesn't persist.
+
+
 # ---------- Sources ----------
 
 # The containers
@@ -53,17 +71,6 @@ MINIKUBE_PUSH = $(MINIKUBE) image load
 
 
 # ---------- Targets ----------
-
-# The build context for the Dockerfiles is this directory, to
-# allow access to files in lib/
-
-# To build directly into a local minikube repo run:
-#
-# eval $(minikube docker-env)
-#
-# in the shell where you do the builds (i.e., where you run this
-# Makefile). This will make the iages directly available to
-# minikube without an explcit push.
 
 .PHONY: $(CONTAINERS)
 build: $(CONTAINERS)
