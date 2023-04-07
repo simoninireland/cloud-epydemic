@@ -24,7 +24,7 @@ REPO_USER=simoninireland
 NETWORK=cloudepydemic
 ENGINE=$REPO_USER/micro-engine
 SHIM=$REPO_USER/micro-engine-rabbitmq-shim
-BROKER=$REPO_USER/rabbitmq-tls
+BROKER=rabbitmq
 GATEWAY=$REPO_USER/api-gateway
 
 # Pid file
@@ -33,20 +33,12 @@ PIDS=containers.pids
 # Test CA
 R=`dirname $0`
 ROOT=`cd $R && pwd`
-CA="$ROOT/testca"
 
 # Environment
-ENV="-e EPYDEMIC_ENGINE_API_ENDPOINT=http://engine:5000/api/v1 \
-     -e RABBITMQ_ENDPOINT=amqp://broker:5672 \
+ENV="-e EPYDEMIC_ENGINE_API_ENDPOINT=http://engine:5000/ \
+     -e RABBITMQ_ENDPOINT=amqp://guest:guest@broker:5672 \
      -e RABBITMQ_REQUEST_QUEUE=request \
-     -e RABBITMQ_RESULT_QUEUE=result \
-     -e RABBITMQ_CACERT=/var/ca/ca_certificate.pem \
-     -e RABBITMQ_CLIENT_CERT=/var/ca/client_certificate.pem \
-     -e RABBITMQ_CLIENT_KEY=/var/ca/client_private_key.pem"
-
-# RabbitMQ conf
-RABBITMQ_CONTAINER_CA_DIR=/var/ca
-RABBITMQ_CA_MOUNT="--mount type=bind,src=$CA,dst=$RABBITMQ_CONTAINER_CA_DIR"
+     -e RABBITMQ_RESULT_QUEUE=result"
 
 # Switch on first argument
 command=$1
@@ -64,22 +56,21 @@ if [ "$command" == "start" ]; then
     docker run --rm -it -d $ENV --network $NETWORK --name engine $ENGINE >>$PIDS
 
     # start the broker
-    docker run --rm -it -d $ENV $RABBITMQ_CA_MOUNT --network $NETWORK \
-	   -p 5671:5671 --name broker $BROKER >>$PIDS
+    docker run --rm -it -d $ENV --network $NETWORK \
+	   -p 5672:5672 --name broker $BROKER >>$PIDS
 
     # start the shim
-    docker run --rm -it -d $ENV $RABBITMQ_CA_MOUNT --network $NETWORK \
+    docker run --rm -it -d $ENV --network $NETWORK \
 	   --name shim $SHIM >>$PIDS
 
     # start the gateway
-    docker run --rm -it -d $ENV $RABBITMQ_CA_MOUNT --network $NETWORK \
+    docker run --rm -it -d $ENV --network $NETWORK \
 	   -p 5000:5000 --name gateway $GATEWAY >>$PIDS
 elif [ "$command" == "stop" ]; then
     # kill all the containers
     if [ -e $PIDS ]; then
 	cat $PIDS | xargs docker container rm -f
 	rm -fr $PIDS
-	rm -fr $RABBITMQ_CONF_DIR
     fi
 
     # kill the network
