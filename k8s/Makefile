@@ -31,6 +31,7 @@ COMPONENTS = \
 	micro-engine.yaml \
 	api-gateway.yaml \
 	ingress.yaml
+SOURCES = $(APP) $(COMPONENTS)
 
 
 # ---------- Resources----------
@@ -85,7 +86,7 @@ deploy:
 	$(KUBECTL) label namespace $(NAMESPACE) istio-injection=enabled
 	echo $(COMPONENTS) | $(XARGS) $(KUBECTL) apply -f
 
-clean:
+clean: stop
 	$(KUBECTL) delete ns $(NAMESPACE)
 
 reallyclean:
