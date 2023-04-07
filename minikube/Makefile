@@ -35,6 +35,7 @@ CHDIR = cd
 MINIKUBE_OPTIONS = \
 	--memory=16384 \
 	--cpus=4
+HELM_RELEASE = demo
 HELM_CHART = cloudepyc
 
 
@@ -45,7 +46,7 @@ start:
 	$(MINIKUBE) start $(MINIKUBE_OPTIONS)
 	$(MINIKUBE) addons enable metrics-server
 	$(MINIKUBE) addons enable ingress
-	$(KUBECTL) create namespace $(NAMESPACE)
+	-$(KUBECTL) create namespace $(NAMESPACE)
 	nohup $(MINIKUBE) dashboard &
 
 .PHONY: stop
@@ -54,7 +55,7 @@ stop:
 
 .PHONY: deploy
 deploy:
-	$(CHDIR) ../helm && $(HELM) install demo -n $(NMAMESPACE) ./$(HELM_CHART)
+	$(CHDIR) ../helm && $(HELM) install $(HELM_RELEASE) -n $(NAMESPACE) ./$(HELM_CHART)
 
 .PHONY: clean
 clean: stop
