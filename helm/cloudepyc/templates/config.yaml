@@ -1,6 +1,6 @@
 # -*- mode: k8s; -*-
 #
-# Kubernetes manifest for ingress
+# Kubernetes application configuration
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -19,15 +19,15 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-{{- if .Values.components.ingress.enabled }}
-apiVersion: {{ include "common.capabilities.ingress.apiVersion" . }}
-kind: Ingress
+{{- if .Values.components.config.enabled }}
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-{{ .Values.components.ingress.name }}
-  namespace: {{ include "common.names.namespace" . | quote }}
+  name: {{ .Release.Name }}-{{ .Values.components.config.name }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Release.Name }}
-    component: {{ .Values.components.ingress.name }}
+    component: {{ .Values.components.config.name }}
     {{- include "common.labels.standard" . | nindent 4 }}
     {{- if .Values.commonLabels }}
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
@@ -36,18 +36,12 @@ metadata:
     {{- if .Values.commonAnnotationms }}
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
-spec:
-  {{- if and .Values.components.ingress.ingressClassName (eq "true" (include "common.ingress.supportsIngressClassname" .)) }}
-  ingressClassName: {{ .Values.components.ingress.ingressClassName | quote }}
-  {{- end }}
-  rules:
-  - http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: {{ .Release.Name }}-{{ .Values.components.gateway.service.name }}
-            port:
-              number: 5000
+data:
+  gateway.endpoint: http://{{ .Release.Name }}-{{ .Values.components.gateway.service.name }}:5000/
+  engine.endpoint.local: http://localhost:5000/   # Access to engines from shim (in the same pod)
+  engine.loglevel: DEBUG
+  broker.endpoint: amqp://{{ .Values.rabbitmq.auth.username }}:{{ .Values.rabbitmq.auth.password }}@{{ .Release.Name }}-{{ .Values.rabbitmq.nameOverride }}:5672/
+  broker.queues.request: request                  # Requests queue name
+  broker.queues.result: result                    # Results queue name
+  broker.loglevel: DEBUG
 {{- end }}

@@ -1,6 +1,6 @@
 # -*- mode: k8s; -*-
 #
-# Kubernetes manifest for API gateway service
+# Kubernetes manifest for engine microservices
 #
 # Copyright (C) 2023 Simon Dobson
 #
@@ -19,15 +19,15 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-{{- if .Values.components.gateway.enabled }}
+{{- if .Values.components.engine.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-{{ .Values.components.gateway.pods.name }}
+  name: {{ .Release.Name }}-{{ .Values.components.engine.pods.name }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Release.Name }}
-    component: {{ .Values.components.gateway.name }}
+    component: {{ .Values.components.engine.name }}
     {{- include "common.labels.standard" . | nindent 4 }}
     {{- if .Values.commonLabels }}
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
@@ -37,53 +37,72 @@ metadata:
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
-  replicas: {{ .Values.components.gateway.pods.replicas }}
+  replicas: {{ .Values.components.engine.replicas }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}
-      component: {{ .Values.components.gateway.name }}
+      component: {{ .Values.components.engine.name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
         app: {{ .Release.Name }}
-        component: {{ .Values.components.gateway.name }}
+        component: {{ .Values.components.engine.name }}
     spec:
       containers:
-      - name: {{ .Values.components.gateway.name }}-microservice
-        image: {{ .Values.components.gateway.pods.image }}
-        imagePullPolicy: {{ .Values.components.gateway.pods.imagePullPolicy }}
+      - name: {{ .Values.components.engine.name }}-microservice
+        image: {{ .Values.components.engine.pods.image }}
+        imagePullPolicy: {{ .Values.components.engine.pods.imagePullPolicy }}
         ports:
         - containerPort: 5000
         env:
+        - name: EPYDEMIC_ENGINE_LOGLEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.engine.pods.configMap }}
+              key: engine.loglevel
+      - name: {{ .Values.components.engine.name }}-shim
+        image:  {{ .Values.components.engine.shim.image }}
+        imagePullPolicy: {{ .Values.components.engine.shim.imagePullPolicy }}
+        env:
+        - name: EPYDEMIC_ENGINE_API_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
+              key: engine.endpoint.local
         - name: RABBITMQ_ENDPOINT
           valueFrom:
             configMapKeyRef:
-              name: {{ .Release.Name }}-{{ .Values.components.gateway.pods.configMap }}
+              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
               key: broker.endpoint
         - name: RABBITMQ_LOGLEVEL
           valueFrom:
             configMapKeyRef:
-              name: {{ .Release.Name }}-{{ .Values.components.gateway.pods.configMap }}
+              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
               key: engine.loglevel
         - name: RABBITMQ_REQUEST_QUEUE
           valueFrom:
             configMapKeyRef:
-              name: {{ .Release.Name }}-{{ .Values.components.gateway.pods.configMap }}
+              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
               key: broker.queues.request
         - name: RABBITMQ_RESULT_QUEUE
           valueFrom:
             configMapKeyRef:
-              name: {{ .Release.Name }}-{{ .Values.components.gateway.pods.configMap }}
+              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
               key: broker.queues.result
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-{{ .Values.components.gateway.service.name }}
+  name: {{ .Release.Name }}-{{ .Values.components.engine.service.name }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Release.Name }}
-    component: {{ .Values.components.gateway.service.name }}
+    component: {{ .Values.components.engine.service.name }}
     {{- include "common.labels.standard" . | nindent 4 }}
     {{- if .Values.commonLabels }}
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
@@ -93,10 +112,10 @@ metadata:
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
-  type: {{ .Values.components.gateway.service.type }}
+  type: {{ .Values.components.engine.service.type }}
   selector:
     app: {{ .Release.Name }}
-    component: {{ .Values.components.gateway.name }}
+    component: {{ .Values.components.engine.name }}
   ports:
   - name: http
     port: 5000

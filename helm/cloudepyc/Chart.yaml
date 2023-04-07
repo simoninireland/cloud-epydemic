@@ -27,9 +27,11 @@ keywords:
   - cloud computing
   - python
   - simulation
+  - epyc
 home: http://github.com/simoninireland/cloudepyc
 sources:
-  - http://github.com/simoninireland/cloudepyc/helm
+  - http://github.com/simoninireland/cloudepyc/helm/
+  - http://github.com/simoninireland/epyc/
 dependencies:
   - name: rabbitmq
     version: 11.13.0
@@ -39,7 +41,10 @@ dependencies:
       - message-broker
 maintainers:
   - name: Simon Dobson
-    email: simoninireland@gmail.com
+    email: simon.dobson@st-andrews.ac.uk
     url: https://simondobson.org
+  - name: Peter Mann
+    email: pm78@st-andrews.ac.uk
+    url: https://peterstandrews.github.io/
 annotations:
   licence: GPLv3

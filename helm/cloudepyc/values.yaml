@@ -34,10 +34,28 @@ clusterDomain: cluster.local
 # ---------- Components ----------
 
 components:
-  # Ingress
-  ingress:
-    name: ingress
+  # Config map
+  config:
+    name: config
     enabled: true
+
+  # Engines
+  engine:
+    name: engine
+    enabled: true
+    pods:
+      name: engine-server
+      replicas: 1
+      image: simoninireland/micro-engine:latest
+      imagePullPolicy: Never
+      configMap: config
+    shim:
+      image: simoninireland/micro-engine-rabbitmq-shim:latest
+      imagePullPolicy: Never
+      configMap: config
+    service:
+      name: engine-service
+      type: ClusterIP
 
   # API gateway
   gateway:
@@ -53,10 +71,19 @@ components:
       name: gateway-service
       type: ClusterIP
 
-  # Message broker
-  rabbitmq:
-    name: broker
+  # Ingress
+  ingress:
+    name: ingress
     enabled: true
-    auth:
-      username: epydemic
-      password: ""
+
+
+# ---------- Sub-charts ----------
+
+# Message broker
+rabbitmq:
+  name: broker
+  nameOverride: broker
+  enabled: true
+  auth:
+    username: epydemic
+    password: "secret1234"
