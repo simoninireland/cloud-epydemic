@@ -1,6 +1,10 @@
 # -*- mode: k8s; -*-
 #
+<<<<<<< HEAD
 # Kubernetes application configuration
+=======
+# Kubernetes deployment for application configuration
+>>>>>>> a2d98ae (Refactored config map)
 #
 # Copyright (C) 2023 Simon Dobson
 #
