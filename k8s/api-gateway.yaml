@@ -75,18 +75,18 @@ spec:
         - name: RABBITMQ_CLIENT_CERT
           valueFrom:
             secretKeyRef:
-              name: gateway-secret
+              name: broker-secret
               key: tls.crt
         - name: RABBITMQ_CLIENT_KEY
           valueFrom:
             secretKeyRef:
-              name: gateway-secret
+              name: broker-secret
               key: tls.key
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: gateway
+  name: gateway-service
   namespace: cloudepydemic
   labels:
     app: cluster
