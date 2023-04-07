@@ -31,7 +31,7 @@ data:
   gateway.endpoint: http://gateway-service:5000/       # Endpoint for gateway
   engine.endpoint.local: http://localhost:5000/        # Access to engines from shim (in the same pod)
   engine.loglevel: DEBUG
-  broker.endpoint: amqp://broker.cloudepydemic.svc.cluster.local:5671/                 # RabbitMQ endpoint
+  broker.endpoint: amqp://broker:5671/                 # RabbitMQ endpoint
   broker.queues.request: request                       # Requests queue name
   broker.queues.result: result                         # Results queue name
   broker.loglevel: DEBUG

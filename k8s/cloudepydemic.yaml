@@ -1,6 +1,6 @@
 # -*- mode: k8s; -*-
 #
-# Kubernetes deployment for namespace
+# Kubernetes deployment for application namespace
 #
 # Copyright (C) 2023 Simon Dobson
 #

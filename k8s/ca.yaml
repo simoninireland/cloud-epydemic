@@ -63,6 +63,7 @@ metadata:
 spec:
   secretName: broker-secret
   dnsNames:
+  - "*.cloudepydemic.svc.cluster.local"
   - "*.broker-nodes.cloudepydemic.svc.cluster.local"
   - "broker.cloudepydemic.svc.cluster.local"
   duration: 24h
@@ -78,6 +79,7 @@ metadata:
 spec:
   secretName: gateway-secret
   dnsNames:
+  - "*.cloudepydemic.svc.cluster.local"
   - "*.gateway-service.cloudepydemic.svc.cluster.local"
   - "gateway-service.cloudepydemic.svc.cluster.local"
   - "gateway.cloudepydemic.svc.cluster.local"
