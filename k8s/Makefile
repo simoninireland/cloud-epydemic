@@ -19,14 +19,16 @@
 
 # ---------- Sources ----------
 
-SOURCES = \
-	cloud-epydemic.yaml \
+NAMESPACE = cloudepydemic
+APP = $(NAMESPACE).yaml
+COMPONENTS= \
+	config.yaml \
 	ca.yaml \
 	broker.yaml \
 	micro-engine.yaml \
 	api-gateway.yaml \
 	ingress.yaml
-NAMESPACE = cloudepydemic
+SOURCES = $(APP) $(COMPONENTS)
 
 
 # ---------- Resources----------
@@ -69,7 +71,7 @@ stop:
 deploy:
 	echo $(SOURCES) | $(XARGS) $(KUBECTL) apply -f
 
-clean:
+clean: stop
 	$(KUBECTL) delete ns $(NAMESPACE)
 
 reallyclean:
