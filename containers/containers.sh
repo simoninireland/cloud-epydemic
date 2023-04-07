@@ -24,7 +24,7 @@ REPO_USER=simoninireland
 NETWORK=cloudepydemic
 ENGINE=$REPO_USER/micro-engine
 SHIM=$REPO_USER/micro-engine-rabbitmq-shim
-BROKER=$REPO_USER/rabbitmq-tls
+BROKER=rabbitmq
 GATEWAY=$REPO_USER/api-gateway
 
 # Pid file
