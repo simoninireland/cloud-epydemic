@@ -39,9 +39,6 @@ rabbitmq = os.environ["RABBITMQ_ENDPOINT"]
 requestQueue = os.environ["RABBITMQ_REQUEST_QUEUE"]
 resultQueue = os.environ["RABBITMQ_RESULT_QUEUE"]
 logLevel = os.environ.get("RABBITMQ_LOGLEVEL", logging.INFO)
-caCertificate = os.environ["RABBITMQ_CACERT"]
-clientCertificate = os.environ["RABBITMQ_CLIENT_CERT"]
-clientKey = os.environ["RABBITMQ_CLIENT_KEY"]
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -49,37 +46,37 @@ logger.setLevel(logLevel)
 ch = logging.StreamHandler()
 logger.addHandler(ch)
 
-# Set up TLS
-context = ssl.create_default_context(cafile=caCertificate)
-context.load_cert_chain(clientCertificate,
-                        keyfile=clientKey)
-
 # Connect to Rabbitmq
 @retry(tries=5, delay=1, backoff=3, logger=logger)
+def _connect(u):
+    '''Basic connection operation to connect to RabbitMQ endpoint.
+
+    :param u: the parsed URL of the endpoint
+    :returns: the channel'''
+
+    # connect to broker using TLS
+    params = pika.ConnectionParameters(host=u.hostname,
+                                       port=u.port)
+    connection = pika.BlockingConnection(params)
+    channel = connection.channel()
+
+    return channel
+
 def connect(endpoint):
-    '''Connect to the RabbitMQ endpoint.
+    '''Connect to the RabbitMQ message broker endpoint.
 
     :param endpoint: the endpoint
     :returns: the channel'''
 
-    # extract the elements from the endpoint
-    u = urlparse(rabbitmq)
-
-    # connect to broker using TLS
-    logger.info(f"Connecting to {rabbitmq}")
-    options = pika.SSLOptions(context, u.hostname)
-    credentials = pika.credentials.ExternalCredentials()
-    params = pika.ConnectionParameters(host=u.hostname,
-                                       port=u.port,
-                                       ssl_options=options,
-                                       credentials=credentials)
-    connection = pika.BlockingConnection(params)
-    channel = connection.channel()
+    logger.info(f"Connecting to {endpoint}")
+    u = urlparse(endpoint)
+    channel = _connect(u)
     logger.info(f"Connected")
 
     # ensure the queues exist
     for ch in ["request", "result"]:
         channel.queue_declare(queue=ch)
+
     return channel
 
 # Define the callback

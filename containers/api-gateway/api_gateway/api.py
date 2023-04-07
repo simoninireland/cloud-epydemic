@@ -55,9 +55,12 @@ def _connect(u):
     :param u: the parsed URL of the endpoint
     :returns: the channel'''
 
-    # connect to broker using TLS
+    # connect to broker
+    credentials = pika.credentials.PlainCredentials(u.username,
+                                                    u.password)
     params = pika.ConnectionParameters(host=u.hostname,
-                                       port=u.port)
+                                       port=u.port,
+                                       credentials=credentials)
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
 
