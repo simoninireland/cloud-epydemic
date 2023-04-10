@@ -117,13 +117,17 @@ def getPendingResults():
         message, properties, body = channel.basic_get(resultQueue)
         if message is not None:
             rc = json.loads(body)
+            logger.info(str(rc))
 
             # retrieve the id
-            id = rc[Experiment.METADATA][EXPERIMENT_ID]
-
-            # package the result
-            r = dict(id=id,
-                     resultsDict=rc)
+            if Experiment.METADATA in rc:
+                # package the result
+                id = rc[Experiment.METADATA][EXPERIMENT_ID]
+                r = dict(id=id,
+                         resultsDict=rc)
+            else:
+                # an error, just pass it back
+                r = rc
             results.append(r)
     channel.close()
 

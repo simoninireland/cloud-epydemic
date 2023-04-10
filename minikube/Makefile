@@ -47,6 +47,7 @@ start:
 	$(MINIKUBE) addons enable metrics-server
 	$(MINIKUBE) addons enable ingress
 	-$(KUBECTL) create namespace $(NAMESPACE)
+	$(CHDIR) ../helm && $(HELM) dependences update ./$(HELM_CHART)
 	nohup $(MINIKUBE) dashboard &
 
 .PHONY: stop
@@ -56,6 +57,13 @@ stop:
 .PHONY: deploy
 deploy:
 	$(CHDIR) ../helm && $(HELM) install $(HELM_RELEASE) -n $(NAMESPACE) ./$(HELM_CHART)
+
+.PHONY: undeploy
+undeploy:
+	$(CHDIR) ../helm && $(HELM) delete $(HELM_RELEASE) -n $(NAMESPACE)
+
+.PHONY: redeploy
+redeploy: undeploy deploy
 
 .PHONY: clean
 clean: stop

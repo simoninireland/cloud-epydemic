@@ -54,9 +54,7 @@ $(VENV):
 
 .PHONY: test
 test: env
-	$(CONTAINERS) start
 	$(ACTIVATE) && PYTHONPATH=../lib $(RUN_TESTS)
-	$(CONTAINERS) stop
 
 .PHONY: clean
 clean:

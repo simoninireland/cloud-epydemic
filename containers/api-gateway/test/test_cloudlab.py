@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+import os
 import unittest
 from epyc import Experiment, LabNotebook
 from cloudepyc import CloudLab
@@ -24,7 +25,7 @@ from epydemic import StochasticDynamics, SIR, ERNetwork
 
 
 class TestCloudLab(unittest.TestCase):
-    endpoint = "http://localhost:5000"
+    endpoint = os.environ.get("EPYDEMIC_API_GATEWAY_ENDPOINT", "http://localhost:5000")
 
     def setUp(self):
         self._nb = LabNotebook()

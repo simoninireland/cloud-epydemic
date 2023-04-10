@@ -17,11 +17,24 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+import os
 import base64
 import pickle
+import logging
+import logging.handlers
 from epyc import Experiment
 
+
+# Grab environment variables
+logLevel = os.environ.get("EPYDEMIC_LOGLEVEL", logging.INFO)
+
 EXPERIMENT_ID = "epyc.experiment.id"
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logLevel)
+ch = logging.StreamHandler()
+logger.addHandler(ch)
 
 
 def runExperiment(submission):
@@ -34,6 +47,7 @@ def runExperiment(submission):
 
     :param params: experimental parameters
     :returns: the results dict'''
+    logger.info("API runExperiment()")
 
     # extract the experiment ID
     id = submission['experiment-id']
@@ -47,9 +61,12 @@ def runExperiment(submission):
 
     # run the experiment
     rc = e.set(params).run()
+    logger.info("rc")
+    logger.info(str(rc))
 
-    # add the experiment identiofier to the resul metadata
-    rc[Experiment.METADATA][EXPERIMENT_ID] = id
+    # add the experiment identifier to the result metadata
+    if Experiment.METADATA in rc:
+        rc[Experiment.METADATA][EXPERIMENT_ID] = id
 
     # return the results dict
     return rc

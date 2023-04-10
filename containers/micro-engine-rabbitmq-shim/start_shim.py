@@ -26,7 +26,7 @@ import time
 from datetime import datetime
 import logging
 import logging.handlers
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 import ssl
 import pika
 from retry import retry
@@ -54,9 +54,12 @@ def _connect(u):
     :param u: the parsed URL of the endpoint
     :returns: the channel'''
 
-    # connect to broker using TLS
+    # connect to broker
+    credentials = pika.credentials.PlainCredentials(u.username,
+                                                    u.password)
     params = pika.ConnectionParameters(host=u.hostname,
-                                       port=u.port)
+                                       port=u.port,
+                                       credentials=credentials)
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
 
@@ -96,7 +99,8 @@ def requestHandler(ch, method, properties, body):
 
     # make call to API
     args = json.loads(body)
-    res = requests.post(f"{endpoint}/runExperiment", json=args)
+    print(urljoin(endpoint, "/runExperiment"))
+    res = requests.post(urljoin(endpoint, "/runExperiment"), json=args)
 
     # post the result to the result queue
     args = json.dumps(res.json())
