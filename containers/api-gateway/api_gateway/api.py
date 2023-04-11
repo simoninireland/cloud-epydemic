@@ -108,6 +108,9 @@ def getPendingResults():
     '''Retrieve all pending results. This reads messages from the
     message broker's result channel and returns them as an array.
 
+    This method will succeed even if the underlying experiments have
+    failed. It will return appropriate error dicts.
+
     :returns: an array of results'''
     channel = connect(rabbitmq)
     logger.info("getPendingResults()")

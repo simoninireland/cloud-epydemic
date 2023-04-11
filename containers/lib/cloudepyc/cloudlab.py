@@ -24,6 +24,7 @@ import pickle
 import cloudpickle
 import uuid
 import time
+from urllib.parse import urljoin
 import requests
 from contextlib import AbstractContextManager
 from epyc import Logger, Lab, LabNotebook, Experiment, ExperimentalParameters, ResultsDict
@@ -65,6 +66,23 @@ class CloudLab(Lab):
         self._endpoint = url
 
 
+    # ---------- Helper functions ----------
+
+    def _checkResponse(self, res, message):
+        """Check the response to an API call, raising an exception
+        if it's an error.
+
+        :param res: an HTTP response
+        :param message: failure message used to form any exception"""
+        if res.status_code != 200:
+            err = res.json()
+            if "detail" in err:
+                reason = " (" + err["detail"] + ")"
+            else:
+                reason = ""
+            raise Exception(f"{message}: {res.status_code}{reason}")
+
+
     # ---------- API functions ----------
 
     # See containers/lib/gateway-api.yaml for the API definition
@@ -82,8 +100,9 @@ class CloudLab(Lab):
     def runExperimentAsync(self, e: Experiment, params: ExperimentalParameters) -> Any:
         '''Run an experiment asynchronously.
 
-        The experiment is submitted to the message broker's request channel,
-        and an experiment id returned to later acquisition.
+        The experiment is submitted via the API gateway's "/ruNExperiment"
+        route and returns immediately, with the experimentral result later
+        being available to be retrieved.
 
         @param submission: experiment and its parameters
         @returns: the experiment identifier'''
@@ -103,9 +122,9 @@ class CloudLab(Lab):
         submission['params'] = params
 
         # make the request
-        res = requests.post(f"{self._endpoint}/api/v1/runExperimentAsync", json=submission)
-        if res.status_code != 200:
-            raise Exception(f"Failed to submit experiment: {res.status_code}")
+        res = requests.post(urljoin(self._endpoint, "/api/v1/runExperimentAsync"),
+                            json=submission)
+        self._checkResponse(res, "Failed to submit experiment")
 
         # return the experiment identifier
         return j
@@ -120,11 +139,15 @@ class CloudLab(Lab):
 
         # get the array
         res = requests.get(f"{self._endpoint}/api/v1/getPendingResults")
-        if res.status_code != 200:
-            raise Exception(f"Failed to retrieve results: {res.status_code}")
+        self._checkResponse(res, "Problem getting results")
+        rcs = res.json()
+        err = [rc for rc in rcs if 'resultsDict' not in rc]
+        if len(err) > 0:
+            raise Exception("Problem retrieving results:")
 
-        # strip the expewriment ids (they're in the metadata)
-        rcs = map(lambda idrc: idrc['resultsDict'], res.json())
+        # strip the experiment ids (they're in the metadata)
+        rcs = map(lambda idrc: idrc['resultsDict'], rcs)
+
         return rcs
 
 
