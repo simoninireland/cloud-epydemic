@@ -5,7 +5,7 @@
 # This file is part of cloud-epydemic, network simulation as a service
 #
 # cloud-epydemic is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published byf
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
@@ -20,26 +20,32 @@
 # ---------- Sources ----------
 
 SOURCES = api_engine/api.py
+NAMESPACE = cloudepydemic
 
 
 # ---------- Tools ----------
 
 # Base tools
 PYTHON = python
-FLASK = flask
+KUBECTL = kubectl
 CHDIR = cd
 RM = rm -fr
 
-# Environment
+# Virtual environment
 VENV = venv3
 REQUIREMENTS = requirements.txt
 DEV_REQUIREMENTS = dev-requirements.txt
+
+# Test environment
+INGRESS_IP = $(shell echo `$(KUBECTL) get ingress -n $(NAMESPACE) -o json | jq '.items[0].status.loadBalancer.ingress[0].ip'`)
+ENV = \
+	EPYDEMIC_API_GATEWAY_ENDPOINT=http://$(INGRESS_IP)/ \
+	PYTHONPATH=../lib
 
 
 # ---------- Constructed commands ----------
 
 ACTIVATE = . $(VENV)/bin/activate
-CONTAINERS = ../containers.sh
 RUN_TESTS = $(PYTHON) -m unittest discover -s test
 
 
@@ -54,7 +60,7 @@ $(VENV):
 
 .PHONY: test
 test: env
-	$(ACTIVATE) && PYTHONPATH=../lib $(RUN_TESTS)
+	$(ACTIVATE) && $(ENV) $(RUN_TESTS)
 
 .PHONY: clean
 clean:
