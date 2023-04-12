@@ -45,7 +45,7 @@ components:
     enabled: true
     pods:
       name: engine-server
-      replicas: 1
+      replicas: 2
       configMap: config
       containers:
         engine:
