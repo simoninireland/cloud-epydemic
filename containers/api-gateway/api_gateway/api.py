@@ -115,23 +115,27 @@ def getPendingResults():
     channel = connect(rabbitmq)
     logger.info("getPendingResults()")
     results = []
-    message = 1
-    while message is not None:
-        message, properties, body = channel.basic_get(resultQueue)
-        if message is not None:
+    frame = 1
+    while frame is not None:
+        frame, properties, body = channel.basic_get(resultQueue)
+        if frame is not None:
             rc = json.loads(body)
             logger.info(str(rc))
 
-            # retrieve the id
+            # retrieve the experiment id
             if Experiment.METADATA in rc:
                 # package the result
                 id = rc[Experiment.METADATA][EXPERIMENT_ID]
+                logger.info(f"Got results for experiment {id}")
                 r = dict(id=id,
                          resultsDict=rc)
             else:
                 # an error, just pass it back
                 r = rc
             results.append(r)
+
+            # acknowledge receipt
+            channel.basic_ack(frame.delivery_tag)
     channel.close()
 
     # return the array
