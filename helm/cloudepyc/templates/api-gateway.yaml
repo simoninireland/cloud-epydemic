@@ -27,7 +27,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Release.Name }}
-    component: {{ .Values.components.gateway.name }}
+    component: {{ .Values.components.gateway.pods.name }}
     {{- include "common.labels.standard" . | nindent 4 }}
     {{- if .Values.commonLabels }}
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
@@ -41,12 +41,12 @@ spec:
   selector:
     matchLabels:
       app: {{ .Release.Name }}
-      component: {{ .Values.components.gateway.name }}
+      component: {{ .Values.components.gateway.pods.name }}
   template:
     metadata:
       labels:
         app: {{ .Release.Name }}
-        component: {{ .Values.components.gateway.name }}
+        component: {{ .Values.components.gateway.pods.name }}
     spec:
       containers:
       - name: {{ .Values.components.gateway.pods.name }}-microservice
