@@ -99,8 +99,8 @@ def requestHandler(ch, method, properties, body):
 
     # make call to API
     args = json.loads(body)
-    print(urljoin(endpoint, "/runExperiment"))
-    res = requests.post(urljoin(endpoint, "/runExperiment"), json=args)
+    logger.info(urljoin(endpoint, "/api/v1/runExperiment"))
+    res = requests.post(urljoin(endpoint, "/api/v1/runExperiment"), json=args)
 
     # post the result to the result queue
     args = json.dumps(res.json())
