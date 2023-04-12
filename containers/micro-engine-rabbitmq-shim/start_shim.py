@@ -83,17 +83,17 @@ def connect(endpoint):
     return channel
 
 # Define the callback
-def requestHandler(ch, method, properties, body):
+def requestHandler(ch, frame, properties, body):
     """Handle an incoming request. The method body is
     passed to the engine microservice API "/runExperiment"
     path, with the returned results dict being set as a message
     on the reesult channel. The request message is then acknowledged.
 
     :param ch: the channel
-    :param method: the method identifier
+    :param method: the message frame
     :param properties: the method properties
     :param body: the method body"""
-    tag = method.delivery_tag
+    tag = frame.delivery_tag
     logger.info(f"Request {tag} received")
     start = datetime.now()
 
