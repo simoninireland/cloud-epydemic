@@ -63,7 +63,9 @@ undeploy:
 	$(CHDIR) ../helm && $(HELM) delete $(HELM_RELEASE) -n $(NAMESPACE)
 
 .PHONY: redeploy
-redeploy: undeploy deploy
+redeploy:
+	-make undeploy
+	make deploy
 
 .PHONY: clean
 clean: stop
