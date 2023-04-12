@@ -37,7 +37,7 @@ metadata:
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
-  replicas: {{ .Values.components.engine.replicas }}
+  replicas: {{ .Values.components.engine.pods.replicas }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}
