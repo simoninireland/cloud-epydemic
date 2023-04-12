@@ -68,6 +68,20 @@ class CloudLab(Lab):
 
     # ---------- Helper functions ----------
 
+    def _buildException(self, message, err):
+        """Build an exception from a hessage and a JSON return object.
+        This looks for a "detaiL" field in the JSON to use
+        in explaining the exception.
+
+        :param ,message: the exception base message
+        :param err: the JSON message giving rise to the exception"""
+        if "detail" in err:
+            d = err["detail"]
+            m = f"{message} ({d})"
+        else:
+            m = message
+        raise Exception(m)
+
     def _checkResponse(self, res, message):
         """Check the response to an API call, raising an exception
         if it's an error.
@@ -76,11 +90,7 @@ class CloudLab(Lab):
         :param message: failure message used to form any exception"""
         if res.status_code != 200:
             err = res.json()
-            if "detail" in err:
-                reason = " (" + err["detail"] + ")"
-            else:
-                reason = ""
-            raise Exception(f"{message}: {res.status_code}{reason}")
+            self._buildException(message, err)
 
 
     # ---------- API functions ----------
@@ -138,12 +148,12 @@ class CloudLab(Lab):
         @returns: an array of results'''
 
         # get the array
-        res = requests.get(f"{self._endpoint}/api/v1/getPendingResults")
+        res = requests.get(urljoin(self._endpoint, "/api/v1/getPendingResults"))
         self._checkResponse(res, "Problem getting results")
         rcs = res.json()
         err = [rc for rc in rcs if 'resultsDict' not in rc]
         if len(err) > 0:
-            raise Exception("Problem retrieving results:")
+            self._buildException("Problem retrieving results", err[0])
 
         # strip the experiment ids (they're in the metadata)
         rcs = map(lambda idrc: idrc['resultsDict'], rcs)
