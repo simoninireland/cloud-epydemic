@@ -54,9 +54,9 @@ spec:
         component: {{ .Values.components.engine.name }}
     spec:
       containers:
-      - name: {{ .Values.components.engine.name }}-microservice
-        image: {{ .Values.components.engine.pods.image }}
-        imagePullPolicy: {{ .Values.components.engine.pods.imagePullPolicy }}
+      - name: {{ .Values.components.engine.pods.name }}-microservice
+        image: {{ .Values.components.engine.pods.containers.engine.image }}
+        imagePullPolicy: {{ .Values.components.engine.pods.containers.engine.imagePullPolicy }}
         ports:
         - containerPort: 5000
         env:
@@ -66,33 +66,33 @@ spec:
               name: {{ .Release.Name }}-{{ .Values.components.engine.pods.configMap }}
               key: engine.loglevel
       - name: {{ .Values.components.engine.name }}-shim
-        image:  {{ .Values.components.engine.shim.image }}
-        imagePullPolicy: {{ .Values.components.engine.shim.imagePullPolicy }}
+        image:  {{ .Values.components.engine.pods.containers.shim.image }}
+        imagePullPolicy: {{ .Values.components.engine.pods.containers.shim.imagePullPolicy }}
         env:
         - name: EPYDEMIC_ENGINE_API_ENDPOINT
           valueFrom:
             configMapKeyRef:
-              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
+              name: {{ .Release.Name }}-{{ .Values.components.engine.pods.configMap }}
               key: engine.endpoint.local
         - name: RABBITMQ_ENDPOINT
           valueFrom:
             configMapKeyRef:
-              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
+              name: {{ .Release.Name }}-{{ .Values.components.engine.pods.configMap }}
               key: broker.endpoint
         - name: RABBITMQ_LOGLEVEL
           valueFrom:
             configMapKeyRef:
-              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
+              name: {{ .Release.Name }}-{{ .Values.components.engine.pods.configMap }}
               key: engine.loglevel
         - name: RABBITMQ_REQUEST_QUEUE
           valueFrom:
             configMapKeyRef:
-              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
+              name: {{ .Release.Name }}-{{ .Values.components.engine.pods.configMap }}
               key: broker.queues.request
         - name: RABBITMQ_RESULT_QUEUE
           valueFrom:
             configMapKeyRef:
-              name: {{ .Release.Name }}-{{ .Values.components.engine.shim.configMap }}
+              name: {{ .Release.Name }}-{{ .Values.components.engine.pods.configMap }}
               key: broker.queues.result
 ---
 apiVersion: v1
@@ -115,7 +115,7 @@ spec:
   type: {{ .Values.components.engine.service.type }}
   selector:
     app: {{ .Release.Name }}
-    component: {{ .Values.components.engine.name }}
+    component: {{ .Values.components.engine.pods.name }}
   ports:
   - name: http
     port: 5000

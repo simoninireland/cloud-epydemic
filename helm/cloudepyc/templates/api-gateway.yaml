@@ -49,9 +49,9 @@ spec:
         component: {{ .Values.components.gateway.name }}
     spec:
       containers:
-      - name: {{ .Values.components.gateway.name }}-microservice
-        image: {{ .Values.components.gateway.pods.image }}
-        imagePullPolicy: {{ .Values.components.gateway.pods.imagePullPolicy }}
+      - name: {{ .Values.components.gateway.pods.name }}-microservice
+        image: {{ .Values.components.gateway.pods.containers.gateway.image }}
+        imagePullPolicy: {{ .Values.components.gateway.pods.containers.gateway.imagePullPolicy }}
         ports:
         - containerPort: 5000
         env:
@@ -96,7 +96,7 @@ spec:
   type: {{ .Values.components.gateway.service.type }}
   selector:
     app: {{ .Release.Name }}
-    component: {{ .Values.components.gateway.name }}
+    component: {{ .Values.components.gateway.pods.name }}
   ports:
   - name: http
     port: 5000

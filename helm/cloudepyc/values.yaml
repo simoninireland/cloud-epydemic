@@ -25,8 +25,8 @@ global:
 
 # ---------- Common properties ----------
 
-commonAnnotations: {}
 commonLabels: {}
+commonAnnotations: {}
 
 clusterDomain: cluster.local
 
@@ -46,13 +46,14 @@ components:
     pods:
       name: engine-server
       replicas: 1
-      image: simoninireland/micro-engine:latest
-      imagePullPolicy: Never
       configMap: config
-    shim:
-      image: simoninireland/micro-engine-rabbitmq-shim:latest
-      imagePullPolicy: Never
-      configMap: config
+      containers:
+        engine:
+          image: simoninireland/micro-engine:latest
+          imagePullPolicy: Never
+        shim:
+          image: simoninireland/micro-engine-rabbitmq-shim:latest
+          imagePullPolicy: Never
     service:
       name: engine-service
       type: ClusterIP
@@ -64,9 +65,11 @@ components:
     pods:
       name: gateway-server
       replicas: 1
-      image: simoninireland/api-gateway:latest
-      imagePullPolicy: Never
       configMap: config
+      containers:
+        gateway:
+          image: simoninireland/api-gateway:latest
+          imagePullPolicy: Never
     service:
       name: gateway-service
       type: ClusterIP
@@ -82,8 +85,10 @@ components:
 # Message broker
 rabbitmq:
   name: broker
-  nameOverride: broker
   enabled: true
+
+  # overrides of chart defaults
+  nameOverride: broker
   auth:
     username: epydemic
     password: "secret1234"
