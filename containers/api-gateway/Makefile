@@ -38,6 +38,8 @@ DEV_REQUIREMENTS = dev-requirements.txt
 
 # Test environment
 INGRESS_IP = $(shell echo `$(KUBECTL) get ingress -n $(NAMESPACE) -o json | jq '.items[0].status.loadBalancer.ingress[0].ip'`)
+ENGINE_POD = $(shell echo `$(KUBECTL) get pod -n $(NAMESPACE) --selector app=demo,component=engine -o json | jq '.items[0].metadata.name'`)
+GATEWAY_POD = $(shell echo `$(KUBECTL) get pod -n $(NAMESPACE) --selector app=demo,component=gateway-server -o json | jq '.items[0].metadata.name'`)
 ENV = \
 	EPYDEMIC_API_GATEWAY_ENDPOINT=http://$(INGRESS_IP)/ \
 	PYTHONPATH=../lib
@@ -61,6 +63,18 @@ $(VENV):
 .PHONY: test
 test: env
 	$(ACTIVATE) && $(ENV) $(RUN_TESTS)
+
+engine-logs:
+	$(KUBECTL) logs $(ENGINE_POD) --all-containers -n $(NAMESPACE)
+
+gateway-logs:
+	$(KUBECTL) logs $(GATEWAY_POD) -n $(NAMESPACE)
+
+engine-login:
+	$(KUBECTL) exec -it $(ENGINE_POD) -n $(NAMESPACE) -- sh
+
+gateway-login:
+	$(KUBECTL) exec -it $(GATEWAY_POD) -n $(NAMESPACE) -- sh
 
 .PHONY: clean
 clean:
