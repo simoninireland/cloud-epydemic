@@ -1,3 +1,0 @@
-epydemic >= 1.12
-epydemic_signals
-redis
