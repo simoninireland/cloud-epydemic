@@ -33,7 +33,7 @@ metadata:
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
   annotations:
-    {{- if .Values.commonAnnotationms }}
+    {{- if .Values.commonAnnotations }}
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
@@ -57,6 +57,10 @@ spec:
       - name: {{ .Values.components.engine.pods.name }}-microservice
         image: {{ .Values.components.engine.pods.containers.engine.image }}
         imagePullPolicy: {{ .Values.components.engine.pods.containers.engine.imagePullPolicy }}
+        {{- if .Values.components.engine.pods.imagePullSecrets }}
+        imagePullSecrets:
+        - name: {{ .Values.components.engine.pods.imagePullSecrets }}
+        {{- end }}
         ports:
         - containerPort: 5000
         env:
@@ -68,6 +72,10 @@ spec:
       - name: {{ .Values.components.engine.name }}-shim
         image:  {{ .Values.components.engine.pods.containers.shim.image }}
         imagePullPolicy: {{ .Values.components.engine.pods.containers.shim.imagePullPolicy }}
+        {{- if .Values.components.engine.pods.imagePullSecrets }}
+        imagePullSecrets:
+        - name: {{ .Values.components.engine.pods.imagePullSecrets }}
+        {{- end }}
         env:
         - name: EPYDEMIC_ENGINE_API_ENDPOINT
           valueFrom:

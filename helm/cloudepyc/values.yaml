@@ -47,6 +47,7 @@ components:
       name: engine-server
       replicas: 2
       configMap: config
+      imagePullSecrets: False
       containers:
         engine:
           image: simoninireland/micro-engine:latest
@@ -66,6 +67,7 @@ components:
       name: gateway-server
       replicas: 1
       configMap: config
+      imagePullSecrets: False
       containers:
         gateway:
           image: simoninireland/api-gateway:latest

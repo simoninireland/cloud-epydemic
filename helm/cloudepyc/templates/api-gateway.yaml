@@ -52,6 +52,10 @@ spec:
       - name: {{ .Values.components.gateway.pods.name }}-microservice
         image: {{ .Values.components.gateway.pods.containers.gateway.image }}
         imagePullPolicy: {{ .Values.components.gateway.pods.containers.gateway.imagePullPolicy }}
+        {{- if .Values.components.gateway.pods.imagePullSecrets }}
+        imagePullSecrets:
+        - name: {{ .Values.components.gateway.pods.imagePullSecrets}}
+        {{- end }}
         ports:
         - containerPort: 5000
         env:
