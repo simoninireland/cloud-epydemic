@@ -49,7 +49,9 @@ REPO_USER = simoninireland
 
 # ---------- Environment ----------
 
-include ./credentials.sh
+include ../oci/credentials.sh
+
+OCI_USERNAME=$(OCI_TENANCY_NAMESPACE)/$(OCI_USER_EMAIL)
 
 
 # ---------- Tools ----------
@@ -64,7 +66,7 @@ CHDIR = cd
 
 DOCKER_BUILD = $(DOCKER) buildx build
 DOCKER_BUILD_CLEAN = $(DOCKER) buildx build --pull --no-cache
-DOCKER_RM = docker image rm
+DOCKER_RM = docker image rm -f
 DOCKER_PUSH = $(DOCKER) push
 DOCKER_CLEAN = $(DOCKER) buildx prune -f
 MINIKUBE_PUSH = $(MINIKUBE) image load
@@ -97,8 +99,8 @@ push-minikube:
 push-oci:
 	echo $(OCI_PASSWORD) | $(DOCKER) login $(OCI_REGION).ocir.io -u $(OCI_USERNAME) --password-stdin
 	for c in $(CONTAINERS); do \
-	  $(DOCKER) tag $(REPO_USER)/$$c $(OCI_REGION).ocir.io/$(OCI_OBJECT_STORAGE_NAMESPACE)/$$c; \
-	  $(DOCKER_PUSH) $(OCI_REGION).ocir.io/$(OCI_OBJECT_STORAGE_NAMESPACE)/$$c; \
+	  $(DOCKER) tag $(REPO_USER)/$$c $(OCI_REGION).ocir.io/$(OCI_TENANCY_NAMESPACE)/$(OCI_REPO)/$$c; \
+	  $(DOCKER_PUSH) $(OCI_REGION).ocir.io/$(OCI_TENANCY_NAMESPACE)/$(OCI_REPO)/$$c; \
 	done
 
 push-digitalocean:
