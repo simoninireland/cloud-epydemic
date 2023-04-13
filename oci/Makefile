@@ -5,7 +5,7 @@
 # This file is part of cloud-epydemic, network simulation as a service
 #
 # cloud-epydemic is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published byf
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
@@ -32,22 +32,52 @@ SOURCES = \
 	node-pool.tf \
 	cluster.tf \
 	outputs.tf
-
 VARIABLES = \
 	credentials.tfvars \
 	kubernetes.tfvars
+
+NAMESPACE = cloudepydemic
+HELM_RELEASE = demo
+HELM_CHART = cloudepyc
+
+# ---------- Environment ----------
+
+include ./credentials.sh
+
+OCI_USERNAME=$(OCI_TENANCY_NAMESPACE)/$(OCI_USER_EMAIL)
 
 
 # ---------- Tools ----------
 
 TERRAFORM = terraform
-TERRAFORM_DIR = .terraform
+KUBECTL = kubectl
+HELM = helm
 RM = rm -fr
+CHDIR = cd
 
 
 # ---------- Constructed lists ----------
 
+# Kubernetes
+KUBE_ENV =
+#KUBECONFIG=$(HOME)/.kube/config
+
+# Terraform
+TERRAFORM_DIR = .terraform
 TERRAFORM_VARIABLES = $(patsubst %.tfvars,--var-file=%.tfvars,$(VARIABLES))
+
+# Helm
+OCI_SECRET = "ocirsecret"
+OCI_SECRET_FILE = "oci-secret.yaml"
+#OCI_IMAGE_TAG = $(OCI_REGION).ocir.io/$(OCI_TENANCY_NAMESPACE)/$(OCI_REPO)
+OCI_IMAGE_TAG = oracleidentitycloudservice/$(OCI_REPO)
+HELM_VARS = \
+	--set components.engine.pods.containers.engine.image=$(OCI_IMAGE_TAG)/micro-engine:latest \
+	--set components.engine.pods.containers.engine.imagePullSecrets=$(OCI_SECRET) \
+	--set components.engine.pods.containers.shim.image=$(OCI_IMAGE_TAG)/micro-engine-rabbitmq-shim:latest \
+	--set components.engine.pods.containers.shim.imagePullSecrets=$(OCI_SECRET) \
+	--set components.gateway.pods.containers.gateway.image=$(OCI_IMAGE_TAG)/api-gateway:latest \
+	--set components.gateway.pods.containers.gateway.imagePullSecrets=$(OCI_SECRET)
 
 
 # ---------- Targets ----------
@@ -64,5 +94,24 @@ env: $(TERRAFORM_DIR)
 $(TERRAFORM_DIR):
 	$(TERRAFORM) init
 
+$(OCI_SECRET): $(OCI_SECRET_FILE)
+
+$(OCI_SECRET_FILE): env
+	$(KUBE_ENV) $(KUBECTL) create secret docker-registry $(OCI_SECRET) --docker-server=$(OCI_REGION).ocir.io  --docker-username=$(OCI_USERNAME) --docker-password=$(OCI_PASSWORD)  --docker-email=$(OCI_EMAIL)
+	$(KUBE_ENV) $(KUBECTL) get secret $(OCI_SECRET) --output=yaml >$(OCI_SECRET_FILE)
+
+deploy: env $(OCI_SECRET)
+	$(KUBE_ENV) $(KUBECTL) create namespace $(NAMESPACE)
+	$(KUBE_ENV) $(CHDIR) ../helm && $(HELM) install $(HELM_RELEASE) $(HELM_VARS) -n $(NAMESPACE) ./$(HELM_CHART)
+
+undeploy: env
+	$(KUBE_ENV) $(HELM) uninstall $(HELM_RELEASE) -n $(NAMESPACE)
+	make clean
+
 clean:
+	-$(KUBE_ENV) $(KUBECTL) delete secret $(OCI_SECRET)
+	-$(RM) $(OCI_SECRET_FILE)
+	-$(KUBE_ENV) $(KUBECTL) delete namespace $(NAMESPACE)
+
+reallyclean: clean
 	$(RM) $(TERRAFORM_DIR) *.tfstate*
