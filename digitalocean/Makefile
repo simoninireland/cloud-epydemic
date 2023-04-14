@@ -17,6 +17,20 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+
+# ---------- Notes ----------
+
+# To create the cluster we need to terraform it and add the nginx
+# ingress, which Digitqal Ocean doesn't have by default. We
+# authenticate against the provider and grabn the cluster connection
+# information for later.
+#
+# Installing nginx is tricky within helm, so we do it manually.
+#
+# We disable the nginx-ingress and cert-manager sub-charts under
+# cloudepyc because of the manual installation.
+
+
 # ---------- Sources ----------
 
 TERRAFORM_SRC = \
@@ -79,7 +93,7 @@ up: env
 	$(TERRAFORM) apply $(TERRAFORM_VARIABLES) -auto-approve
 	$(DOCTL) kubernetes cluster kubeconfig save $(K8S_APPLICATION_NAME)
 
-down: env
+down:
 	$(TERRAFORM) destroy $(TERRAFORM_VARIABLES) -auto-approve
 
 .PHONY: env
