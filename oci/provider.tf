@@ -21,15 +21,15 @@ terraform {
   required_providers {
     oci = {
       source  = "oracle/oci"
-      version = ">= 4.107.0"
+      version = ">= 4.108.1"
     }
   }
 }
 
 provider "oci" {
-  tenancy_ocid     = var.tenancy_ocid
-  user_ocid        = var.user_ocid
-  private_key_path = var.private_key_path
-  fingerprint      = var.key_fingerprint
-  region           = var.oci_region
+  tenancy_ocid     = var.OCI_TENANCY_OCID
+  user_ocid        = var.OCI_USER_OCID
+  private_key_path = var.OCI_PRIVATE_KEY_PATH
+  fingerprint      = var.OCI_PRIVATE_KEY_FINGERPRINT
+  region           = var.OCI_REGION
 }

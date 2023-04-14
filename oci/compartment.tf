@@ -19,7 +19,7 @@
 
 resource "oci_identity_compartment" "tf-compartment" {
     # Required
-    compartment_id = var.tenancy_ocid
+    compartment_id = var.OCI_TENANCY_OCID
     description = "Compartment for Kubernetes cluster"
     name = "kube"
 }

@@ -20,7 +20,7 @@
 resource "oci_containerengine_cluster" "oke-cluster" {
   compartment_id = oci_identity_compartment.tf-compartment.id
   #kubernetes_version = data.oci_containerengine_cluster_option.OKE_cluster_option.kubernetes_versions.0
-  kubernetes_version = var.k8s_version
+  kubernetes_version = var.K8S_VERSION
 
   name = "cloudepydemic"
   vcn_id = module.vcn.vcn_id

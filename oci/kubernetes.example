@@ -1,3 +1,5 @@
+# -*- mode: shell-script; -*-
+#
 # Terraform variables to Kubernetes installation details
 #
 # Copyright (C) 2023 Simon Dobson
@@ -17,7 +19,20 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+# This file contains shell/terraform variables for configuring
+# Kubernetes. Copy this file to kubernetes.tfvars and fill in the
+# necessary values before deploying.
+#
+# Delete any variables for which you want tpo use the default values.
+
 # Fill in these values before deploying
-worker_node_shape=""
-worker_node_image_ocid=""
-worker_node_pool_size=3
+K8S_VERSION=""
+K8S_WORKER_NODE_SHAPE=""
+K8S_WORKER_NODE_IMAGE_OCID=""
+
+# All variables below this have defaults
+K8S_WORKER_NODE_IMAGE_NAME=""
+K8S_WORKER_NODE_POOL_NAME=""
+K8S_WORKER_NODE_POOL_SIZE=""
+K8S_WORKER_NODE_MEMORY=""
+K8S_WORKER_NODE_CPUS=""

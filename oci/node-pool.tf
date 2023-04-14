@@ -21,17 +21,17 @@ resource "oci_containerengine_node_pool" "oke-node-pool" {
   cluster_id = oci_containerengine_cluster.oke-cluster.id
   compartment_id = oci_identity_compartment.tf-compartment.id
   #kubernetes_version =  data.oci_containerengine_cluster_option.OKE_cluster_option.kubernetes_versions.0
-  kubernetes_version = var.k8s_version
-  name = var.k8s_worker_node_pool_name
+  kubernetes_version = var.K8S_VERSION
+  name = var.K8S_WORKER_NODE_POOL_NAME
 
-  node_shape = var.k8s_worker_node_shape
+  node_shape = var.K8S_WORKER_NODE_SHAPE
   node_source_details {
-    image_id = var.k8s_worker_node_image_ocid
+    image_id = var.K8S_WORKER_NODE_IMAGE_OCID
     source_type = "image"
   }
   node_shape_config {
-    memory_in_gbs = var.k8s_worker_node_memory
-    ocpus = var.k8s_worker_node_cpus
+    memory_in_gbs = var.K8S_WORKER_NODE_MEMORY
+    ocpus = var.K8S_WORKER_NODE_CPUS
   }
   node_config_details{
     placement_configs{
@@ -46,7 +46,7 @@ resource "oci_containerengine_node_pool" "oke-node-pool" {
       availability_domain = data.oci_identity_availability_domains.ads.availability_domains[2].name
       subnet_id = oci_core_subnet.vcn-private-subnet.id
     }
-    size = var.k8s_worker_node_pool_size
+    size = var.K8S_WORKER_NODE_POOL_SIZE
   }
 
   # initial_node_labels {

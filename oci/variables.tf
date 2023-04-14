@@ -5,7 +5,7 @@
 # This file is part of cloud-epydemic, network simulation as a service
 #
 # cloud-epydemic is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published byf
+# it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
@@ -19,77 +19,104 @@
 
 # ---------- OCI credentials (credentials.tfvars) ----------
 
-variable "tenancy_ocid" {
+variable "OCI_TENANCY" {
+  description = "Tenancy name"
+  type = string
+}
+variable "OCI_REGION" {
+  description = "Tenancy region"
+  type = string
+}
+variable "OCI_TENANCY_OCID" {
   description = "Tenancy ID"
   type = string
   sensitive = true
 }
-variable "oci_region" {
-  description = "Region"
+variable "OCI_TENANCY_NAMESPACE" {
+  description = "Tenancy namespace"
+  type = string
+}
+variable "OCI_OBJECT_STORAGE_NAMESPACE" {
+  description = "Tenancy object store"
   type = string
 }
 
-variable "user_ocid" {
+variable "OCI_USER_EMAIL" {
+  description = "User email address"
+  type = string
+  sensitive = true
+}
+variable "OCI_USER_OCID" {
   description = "User ID"
   type = string
   sensitive = true
 }
-variable "key_fingerprint" {
+variable "OCI_PASSWORD" {
+  description = "User password"
+  type = string
+  sensitive = true
+}
+variable "OCI_PRIVATE_KEY_FINGERPRINT" {
   description = "Public key fingerprint"
   type = string
 }
-variable "private_key_path" {
+variable "OCI_PRIVATE_KEY_PATH" {
   description = "Path to private key"
   type = string
   sensitive = true
 }
 
+variable "OCI_REPO" {
+  description = "Container repository name"
+  type = string
+}
+
 
 # ---------- Kubernetes configuration (kubernetes.tfvars) ----------
 
-variable "k8s_version" {
+variable "K8S_VERSION" {
   description = "Kubernetes version (must match worker node images)"
   type = string
 }
 
-variable "k8s_worker_node_shape" {
+variable "K8S_WORKER_NODE_SHAPE" {
   description = "Machine shape for Kubernetes worker node"
   type = string
 }
 
-variable "k8s_worker_node_image_ocid" {
+variable "K8S_WORKER_NODE_IMAGE_OCID" {
   description = "OCID of machine image for Kubernetes worker node"
   type = string
 }
 
-# All k8s_* variables below this have defaults
+# All K8S_* variables below this line have defaults
 
-variable "k8s_worker_node_image_name" {
+variable "K8S_WORKER_NODE_IMAGE_NAME" {
   description = "Name of machine image for Kubernetes worker node (for documentation)"
   type = string
   default = "<unknown>"
 }
 
-variable "k8s_worker_node_pool_name" {
+variable "K8S_WORKER_NODE_POOL_NAME" {
   description = "Name of Kubernetes worker node pool"
   type = string
   default = "pool1"
 }
 
-variable "k8s_worker_node_pool_size" {
+variable "K8S_WORKER_NODE_POOL_SIZE" {
   description = "Size of Kubernetes worker node pool"
   type = number
   default = 3
 }
 
-variable "k8s_worker_node_memory" {
+variable "K8S_WORKER_NODE_MEMORY" {
   description = "Memory for a woreker node in GBs"
   type = number
   default = 2
 }
 
-variable "k8s_worker_node_cpus" {
-  description = "Number of virtual CPUs for a woreker node"
+variable "K8S_WORKER_NODE_CPUS" {
+  description = "Number of virtual CPUs for a worker node"
   type = number
   default = 2
 }

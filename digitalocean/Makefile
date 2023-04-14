@@ -28,16 +28,28 @@ VARIABLES = \
 	credentials.tfvars \
 	kubernetes.tfvars
 
+NAMESPACE = cloudepydemic
+HELM_RELEASE = demo
+HELM_CHART = cloudepyc
+
+
+# ---------- Environment ----------
+
+include ./credentials.tfvars
+
 
 # ---------- Tools ----------
 
 TERRAFORM = terraform
-TERRAFORM_DIR = .terraform
+KUBECTL = kubectl
+DOCTL = doctl
 RM = rm -fr
 
 
 # ---------- Constructed lists ----------
 
+# Terraform
+TERRAFORM_DIR = .terraform
 TERRAFORM_VARIABLES = $(patsubst %.tfvars,--var-file=%.tfvars,$(VARIABLES))
 
 
@@ -49,14 +61,20 @@ up: env
 down: env
 	$(TERRAFORM) destroy $(TERRAFORM_VARIABLES) -auto-approve
 
-down: env
-	$(TERRAFORM) destroy -var-file=$(VARIABLES) -auto-approve
-
 .PHONY: env
 env: $(TERRAFORM_DIR)
 
 $(TERRAFORM_DIR):
 	$(TERRAFORM) init
+	$(DOCTL) auth init -t $(DO_TOKEN)
+
+deploy: env $
+	$(KUBECTL) create namespace $(NAMESPACE)
+	$(CHDIR) ../helm && $(HELM) install $(HELM_RELEASE) $(HELM_VARS) -n $(NAMESPACE) ./$(HELM_CHART)
+
+undeploy: env
+	$(HELM) uninstall $(HELM_RELEASE) -n $(NAMESPACE)
+	make clean
 
 clean:
 	$(RM) $(TERRAFORM_DIR) *.tfstate*

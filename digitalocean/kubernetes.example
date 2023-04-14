@@ -1,3 +1,5 @@
+# -*- mode: shell-script; -*-
+#
 # Terraform variables to provide Kubernetes set-up for Digital Ocean
 #
 # Copyright (C) 2023 Simon Dobson
@@ -17,4 +19,16 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+# This file contains shell/terraform variables for configuring
+# Kubernetes. Copy this file to kubernetes.tfvars and fill in the
+# necessary values before deploying.
+#
+# Delete any variables for which you want to use the default values.
+
 # Fill in these values before deploying
+K8S_VERSION=""
+K8S_APPLKICATION_NAME=""
+K8S_WORKER_NODE_SHAPE=""
+
+# All variables below this have defaults
+K8S_WORKER_NODE_POOL_SIZE=""

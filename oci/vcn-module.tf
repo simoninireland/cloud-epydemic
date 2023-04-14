@@ -21,7 +21,7 @@ module "vcn" {
   source  = "oracle-terraform-modules/vcn/oci"
   version = "3.5.3"
 
-  region = var.oci_region
+  region = var.OCI_REGION
   compartment_id = oci_identity_compartment.tf-compartment.id
   label_prefix = ""
 
