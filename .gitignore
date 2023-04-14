@@ -125,13 +125,6 @@ nohup.out
 *.tfstate.backup
 *.tfvars
 
-# PID files
-*.pids
-
-# Filled-in credentials
-oci/credentials.sh
-digitalocean/credentials.sh
-
 # Helm chart dependencies and working files
 helm/*/charts/*
 *.lock
