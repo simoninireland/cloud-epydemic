@@ -32,45 +32,55 @@ CHDIR = cd
 
 # ---------- Options ----------
 
+# Minikube
 MINIKUBE_OPTIONS = \
 	--memory=16384 \
 	--cpus=4
+
+# Helm
 HELM_RELEASE = demo
 HELM_CHART = cloudepyc
+HELM_VARS = \
+	--set ingress-nginx.enabled=false \
+	--set cert-manager.enabled=false \
+	--set components.certManager.enabled=false
+
+# Cert-manager
+CERT_MANAGER_RELEASE = cert-manager
+CERT_MANAGER_HELM_CHART = jetstack/cert-manager
+CERT_MANAGER_VERSION = v1.11.0
+CERT_MANAGER_DEPLOY = https://github.com/cert-manager/cert-manager/releases/download/$(CERT_MANAGER_VERSION)/cert-manager.crds.yaml
 
 
 # ---------- Targets ----------
 
-.PHONY: start
 start:
 	$(MINIKUBE) start $(MINIKUBE_OPTIONS)
 	$(MINIKUBE) addons enable metrics-server
 	$(MINIKUBE) addons enable ingress
 	-$(KUBECTL) create namespace $(NAMESPACE)
-	$(CHDIR) ../helm && $(HELM) dependences update ./$(HELM_CHART)
+	$(CHDIR) ../helm && $(HELM) dependencies update ./$(HELM_CHART)
+	$(HELM) install $(CERT_MANAGER_RELEASE) $(CERT_MANAGER_HELM_CHART) \
+		-n $(NAMESPACE) --version $(CERT_MANAGER_VERSION) \
+		--set installCRDs=true
 	nohup $(MINIKUBE) dashboard &
 
-.PHONY: stop
 stop:
 	$(MINIKUBE) stop
 
-.PHONY: deploy
 deploy:
-	$(CHDIR) ../helm && $(HELM) install $(HELM_RELEASE) -n $(NAMESPACE) ./$(HELM_CHART)
+	$(CHDIR) ../helm && $(HELM) install $(HELM_RELEASE) $(HELM_VARS)  -n $(NAMESPACE) ./$(HELM_CHART)
 
-.PHONY: undeploy
+upgrade:
+	$(CHDIR) ../helm && $(HELM) upgrade $(HELM_RELEASE) $(HELM_VARS) -n $(NAMESPACE) ./$(HELM_CHART)
+
 undeploy:
-	$(CHDIR) ../helm && $(HELM) delete $(HELM_RELEASE) -n $(NAMESPACE)
+	$(HELM) delete $(HELM_RELEASE) -n $(NAMESPACE)
 
-.PHONY: redeploy
-redeploy:
-	-make undeploy
-	make deploy
+clean:
+	-$(HELM) delete $(CERT_MANAGER_RELEASE) -n $(NAMESPACE)
+	-$(KUBECTL) delete namespace $(NAMESPACE)
+	-$(KUBECTL) delete -f $(CERT_MANAGER_DEPLOY)
 
-.PHONY: clean
-clean: stop
-	$(KUBECTL) delete ns $(NAMESPACE)
-
-.PHONY: reallyclean
 reallyclean:
 	$(MINIKUBE) delete
