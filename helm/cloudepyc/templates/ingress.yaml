@@ -33,7 +33,8 @@ metadata:
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
   annotations:
-    {{- if .Values.commonAnnotationms }}
+    kubernetes.io/ingress.class: {{ .Values.components.ingress.ingressClass }}
+    {{- if .Values.commonAnnotations }}
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
