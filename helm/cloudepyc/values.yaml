@@ -51,10 +51,10 @@ components:
       containers:
         engine:
           image: simoninireland/micro-engine:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
         shim:
           image: simoninireland/micro-engine-rabbitmq-shim:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
     service:
       name: engine-service
       type: ClusterIP
@@ -71,7 +71,7 @@ components:
       containers:
         gateway:
           image: simoninireland/api-gateway:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
     service:
       name: gateway-service
       type: ClusterIP
@@ -80,6 +80,7 @@ components:
   ingress:
     name: ingress
     enabled: true
+    ingressClass: nginx
 
 
 # ---------- Sub-charts ----------
