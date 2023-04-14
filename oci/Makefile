@@ -71,10 +71,13 @@ OCI_IMAGE_TAG = oracleidentitycloudservice/$(OCI_REPO)
 HELM_VARS = \
 	--set components.engine.pods.containers.engine.image=$(OCI_IMAGE_TAG)/micro-engine:latest \
 	--set components.engine.pods.containers.engine.imagePullSecrets=$(OCI_SECRET) \
+	--set components.engine.pods.containers.engine.imagePullPolicy=Always \
 	--set components.engine.pods.containers.shim.image=$(OCI_IMAGE_TAG)/micro-engine-rabbitmq-shim:latest \
 	--set components.engine.pods.containers.shim.imagePullSecrets=$(OCI_SECRET) \
+	--set components.engine.pods.containers.shim.imagePullPolicy=Always \
 	--set components.gateway.pods.containers.gateway.image=$(OCI_IMAGE_TAG)/api-gateway:latest \
-	--set components.gateway.pods.containers.gateway.imagePullSecrets=$(OCI_SECRET)
+	--set components.gateway.pods.containers.gateway.imagePullSecrets=$(OCI_SECRET) \
+	--set components.gateway.pods.containers.gateway.imagePullPolicy=Always
 
 
 # ---------- Targets ----------
