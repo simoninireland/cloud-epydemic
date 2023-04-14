@@ -20,19 +20,23 @@
 # ---------- Digital Ocean credentials (credentials.tfvars) ----------
 
 variable "DO_TOKEN" {
-  description = "Digital Ocean access token"
+  description = "Access token"
   type = string
   sensitive = true
 }
-
 variable "DO_REGION" {
+  description = "Region"
   type = string
 }
-
 variable "DO_PRIVATE_KEY_FILE" {
-  description = "Digital Ocean private key file"
+  description = "Private key file"
   type = string
   sensitive = true
+}
+
+variable "DO_REPO" {
+  description = "Container repo name"
+  type = string
 }
 
 
