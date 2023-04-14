@@ -51,6 +51,7 @@ dependencies:
     condition: cert-manager.enabled
     tags:
       - cert-manager
+    installCRDs: true
 maintainers:
   - name: Simon Dobson
     email: simon.dobson@st-andrews.ac.uk

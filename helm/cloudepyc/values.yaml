@@ -98,7 +98,8 @@ rabbitmq:
     username: epydemic
     password: "secret1234"
 
-# nginx ingress (not installed by default on all cloud providers)
+# nginx ingress (not installed by default on all cloud providers, for
+# example Digital Ocean)
 ingress-nginx:
   enabled: true
 
@@ -107,6 +108,10 @@ ingress-nginx:
     publishService:
       enabled: true
 
-# cert-manager
+# cert-manager (can be awkward to install as part of a Helm chart
+# because it installs CRDs, and so often better installed manually)
 cert-manager:
-  enabled: true
+  enabled: false
+
+  # overrides
+  installCRDs: true
