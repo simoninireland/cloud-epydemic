@@ -36,6 +36,7 @@ HELM_CHART = cloudepyc
 # ---------- Environment ----------
 
 include ./credentials.tfvars
+include ./kubernetes.tfvars
 
 
 # ---------- Tools ----------
@@ -54,9 +55,16 @@ CHDIR = cd
 TERRAFORM_DIR = .terraform
 TERRAFORM_VARIABLES = $(patsubst %.tfvars,--var-file=%.tfvars,$(VARIABLES))
 
+# nginx ingress
+NGINX_VERSION = v1.1.1
+NGINX_DEPLOY = https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-$(NGINX_VERSION)/deploy/static/provider/do/deploy.yaml
+
 # Helm
 DO_IMAGE_TAG = registry.digitalocean.com/$(DO_REPO)
 HELM_VARS = \
+	--set ingress-nginx.enabled=false \
+	--set cert-manager.enabled=false \
+	--set components.certManager.enabled=false \
 	--set components.engine.pods.containers.engine.image=$(DO_IMAGE_TAG)/micro-engine:latest \
 	--set components.engine.pods.containers.engine.imagePullPolicy=Always \
 	--set components.engine.pods.containers.shim.image=$(DO_IMAGE_TAG)/micro-engine-rabbitmq-shim:latest \
@@ -69,6 +77,7 @@ HELM_VARS = \
 
 up: env
 	$(TERRAFORM) apply $(TERRAFORM_VARIABLES) -auto-approve
+	$(DOCTL) kubernetes cluster kubeconfig save $(K8S_APPLICATION_NAME)
 
 down: env
 	$(TERRAFORM) destroy $(TERRAFORM_VARIABLES) -auto-approve
@@ -80,19 +89,20 @@ $(TERRAFORM_DIR):
 	$(TERRAFORM) init
 	$(DOCTL) auth init -t $(DO_TOKEN)
 	$(DOCTL) registry kubernetes-manifest | $(KUBECTL) apply -f -
+	$(KUBECTL) apply -f $(NGINX_DEPLOY)
+	-$(KUBECTL) create namespace $(NAMESPACE)
 
 deploy: env
-	-$(KUBECTL) create namespace $(NAMESPACE)
 	$(CHDIR) ../helm && $(HELM) install $(HELM_RELEASE) $(HELM_VARS) -n $(NAMESPACE) ./$(HELM_CHART)
 
 upgrade:
 	$(CHDIR) ../helm && $(HELM) upgrade $(HELM_RELEASE) $(HELM_VARS) -n $(NAMESPACE) ./$(HELM_CHART)
 
-undeploy: env
+undeploy:
 	$(HELM) uninstall $(HELM_RELEASE) -n $(NAMESPACE)
-	make clean
 
 clean:
+	-$(KUBECTL) delete -f $(NGINX_DEPLOY)
 	-$(KUBECTL) delete namespace $(NAMESPACE)
 
 reallyclean:
