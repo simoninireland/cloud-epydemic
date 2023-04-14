@@ -33,14 +33,18 @@ metadata:
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
   annotations:
-    kubernetes.io/ingress.class: {{ .Values.components.ingress.ingressClass }}
     {{- if .Values.commonAnnotations }}
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
+    {{- if .Values.components.certManager.enabled }}
+    cert-manager.io/cluster-issuer: {{ .Release.Name }}-{{ .Values.components.certManager.name }}-staging
+    kubernetes.io/ingress.class: "nginx"
+    {{- end }}
 spec:
-  {{- if and .Values.components.ingress.ingressClassName (eq "true" (include "common.ingress.supportsIngressClassname" .)) }}
-  ingressClassName: {{ .Values.components.ingress.ingressClassName | quote }}
-  {{- end }}
+  tls:
+  - hosts:
+    - "*.ondigitalocean.com"
+    secretName: echo-tls
   rules:
   - http:
       paths:

@@ -1,3 +1,5 @@
+# Helm default values
+#
 # Copyright (C) 2023 Simon Dobson
 #
 # This file is part of cloud-epydemic, network simulation as a service
@@ -15,20 +17,10 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
-# ---------- Global properties ----------
-
-global:
-  imageRegistry: ""
-  imagePullSecrets: []
-  storageClass: ""
-
-
 # ---------- Common properties ----------
 
 commonLabels: {}
 commonAnnotations: {}
-
-clusterDomain: cluster.local
 
 
 # ---------- Components ----------
@@ -82,6 +74,16 @@ components:
     enabled: true
     ingressClass: nginx
 
+  # Load balancer
+  loadBalancer:
+    name: load-balancer
+    enabled: true
+
+  # TLS certificate manager
+  certManager:
+    name: cert-manager
+    enabled: true
+
 
 # ---------- Sub-charts ----------
 
@@ -90,8 +92,21 @@ rabbitmq:
   name: broker
   enabled: true
 
-  # overrides of chart defaults
+  # overrides
   nameOverride: broker
   auth:
     username: epydemic
     password: "secret1234"
+
+# nginx ingress (not installed by default on all cloud providers)
+ingress-nginx:
+  enabled: true
+
+  # overrides
+  controller:
+    publishService:
+      enabled: true
+
+# cert-manager
+cert-manager:
+  enabled: true

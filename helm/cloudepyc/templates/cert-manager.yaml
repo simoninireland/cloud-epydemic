@@ -1,0 +1,80 @@
+# -*- mode: k8s; -*-
+#
+# Kubernetes manifest for ingress
+#
+# Copyright (C) 2023 Simon Dobson
+#
+# This file is part of cloud-epydemic, network simulation as a service
+#
+# cloud-epydemic is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# cloud-epydemic is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
+
+{{- if ".Values.components.certManager.enabled" }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.components.certManager.name }}-staging
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels:
+    app: {{ .Release.Name }}
+    component: {{ .Values.components.certManager.name }}-staging
+    {{- include "common.labels.standard" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    kubernetes.io/ingress.class: {{ .Values.components.ingress.ingressClass }}
+    {{- if .Values.commonAnnotations }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+spec:
+  acme:
+     server: https://acme-staging-v02.api.letsencrypt.org/directory
+     email: simoninireland@gmail.com
+     privateKeySecretRef:
+       name: letsencrypt-staging
+     solvers:
+     - http01:
+        ingress:
+           class:  nginx
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.components.certManager.name }}-prod
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels:
+    app: {{ .Release.Name }}
+    component: {{ .Values.components.certManager.name }}-prod
+    {{- include "common.labels.standard" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    kubernetes.io/ingress.class: {{ .Values.components.ingress.ingressClass }}
+    {{- if .Values.commonAnnotations }}
+      {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+spec:
+  acme:
+     server: https://acme-v02.api.letsencrypt.org/directory
+     email: simoninireland@gmail.com
+     privateKeySecretRef:
+       name: letsencrypt-staging
+     solvers:
+     - http01:
+        ingress:
+           class:  nginx
+{{- end }}
