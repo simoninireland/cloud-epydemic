@@ -51,7 +51,7 @@ REPO_USER = simoninireland
 
 # OCI
 include ../oci/credentials.tfvars
-OCI_USERNAME=$(OCI_TENANCY_NAMESPACE)/$(OCI_USER_EMAIL)
+OCI_USERNAME=$(OCI_TENANCY_NAMESPACE)/oracleidentitycloudservice/$(OCI_USER_EMAIL)
 
 # Digital Ocean
 include ../digitalocean/credentials.tfvars
