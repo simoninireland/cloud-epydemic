@@ -20,7 +20,6 @@
 resource "oci_containerengine_node_pool" "oke-node-pool" {
   cluster_id = oci_containerengine_cluster.oke-cluster.id
   compartment_id = oci_identity_compartment.tf-compartment.id
-  #kubernetes_version =  data.oci_containerengine_cluster_option.OKE_cluster_option.kubernetes_versions.0
   kubernetes_version = var.K8S_VERSION
   name = var.K8S_WORKER_NODE_POOL_NAME
 
@@ -48,9 +47,4 @@ resource "oci_containerengine_node_pool" "oke-node-pool" {
     }
     size = var.K8S_WORKER_NODE_POOL_SIZE
   }
-
-  # initial_node_labels {
-  #   key = "name"
-  #   value = "cloudepydemic"
-  # }
 }

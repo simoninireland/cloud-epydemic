@@ -36,10 +36,6 @@ variable "OCI_TENANCY_NAMESPACE" {
   description = "Tenancy namespace"
   type = string
 }
-variable "OCI_OBJECT_STORAGE_NAMESPACE" {
-  description = "Tenancy object store"
-  type = string
-}
 
 variable "OCI_USER_EMAIL" {
   description = "User email address"
@@ -89,7 +85,20 @@ variable "K8S_WORKER_NODE_IMAGE_OCID" {
   type = string
 }
 
+
 # All K8S_* variables below this line have defaults
+
+variable "OCI_K8S_COMPARTMENT" {
+  description = "Name of the compartment to build for the cluster"
+  type = string
+  default = "kube"
+}
+
+variable "K8S_CLUSTER_NAME" {
+  description = "Cluster name"
+  type = string
+  default = "cloudepyc"
+}
 
 variable "K8S_WORKER_NODE_IMAGE_NAME" {
   description = "Name of machine image for Kubernetes worker node (for documentation)"
@@ -110,7 +119,7 @@ variable "K8S_WORKER_NODE_POOL_SIZE" {
 }
 
 variable "K8S_WORKER_NODE_MEMORY" {
-  description = "Memory for a woreker node in GBs"
+  description = "Memory for a worker node in GBs"
   type = number
   default = 2
 }
