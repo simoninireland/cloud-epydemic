@@ -27,8 +27,9 @@
 
 # Fill in these values before deploying
 K8S_VERSION=""
-K8S_APPLKICATION_NAME=""
-K8S_WORKER_NODE_SHAPE=""
+K8S_APPLICATION_NAME=""
 
 # All variables below this have defaults
+K8S_WORKER_NODE_POOL_NAME=""
+K8S_WORKER_NODE_SHAPE=""
 K8S_WORKER_NODE_POOL_SIZE=""
