@@ -224,6 +224,7 @@ authenticate: env
 	$(DOCTL) registry kubernetes-manifest | $(KUBECTL) apply -f -
 
 deauthenticate:
+	$(DOCTL) auth remove --context default -t $(DO_TOKEN)
 
 # Part 4: Environment management
 
