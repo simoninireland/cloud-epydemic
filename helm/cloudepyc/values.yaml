@@ -73,13 +73,13 @@ components:
     name: ingress
     enabled: true
     ingressClassName: nginx
-    host: cloud.epydemic.org
+    host: ""
 
   # TLS certificate manager
   certManager:
     name: cert-manager
     enabled: true
-    email: simoninireland@gmail.com
+    email: ""
     privateKeySecretName: letsencrypt-nginx-secret-key
 
 
