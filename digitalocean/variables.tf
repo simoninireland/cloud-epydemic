@@ -42,24 +42,28 @@ variable "DO_REPO" {
 
 # ---------- Digital ocean Kubernetes configuration (credentials.tfvars) ----------
 
-# All k8s_* variables below this have defaults
-
 variable "K8S_VERSION" {
   description = "Kubernetes version"
   type = string
-  default = "1.25.4-do.0"
 }
+
 variable "K8S_APPLICATION_NAME" {
   description = "Kubernetes application name"
   type = string
-  default = "geekiam"
 }
 
+# All K8S_* variables below this have defaults
+
+variable "K8S_WORKER_NODE_POOL_NAME" {
+  description = "The name of the worker node pool"
+  type = string
+  default = "worker-node-pool"
+}
 variable "K8S_WORKER_NODE_POOL_SIZE" {
+  description = "The number of worker nodes in the node pool"
   type = number
   default = 3
 }
-
 variable "K8S_WORKER_NODE_SHAPE" {
   description = "Machine shape for Kubernetes worker node"
   type = string

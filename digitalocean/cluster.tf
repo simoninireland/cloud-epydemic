@@ -23,7 +23,7 @@ resource "digitalocean_kubernetes_cluster" "k8s-cluster" {
   version = var.K8S_VERSION
 
   node_pool {
-    name       = "geekiam-worker-pool"
+    name       = var.K8S_WORKER_NODE_POOL_NAME
     size       = var.K8S_WORKER_NODE_SHAPE
     node_count = var.K8S_WORKER_NODE_POOL_SIZE
   }
