@@ -39,7 +39,7 @@ resource "digitalocean_droplet" "cluster" {
   region = var.DO_REGION
   size = var.K8S_WORKER_NODE_SHAPE
   ssh_keys = [
-    data.digitalocean_ssh_key.cloudepydemic.id
+    data.digitalocean_ssh_key.cloudepyc.id
   ]
 
   connection {
