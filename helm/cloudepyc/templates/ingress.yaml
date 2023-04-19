@@ -33,14 +33,22 @@ metadata:
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
     {{- end }}
   annotations:
-    kubernetes.io/ingress.class: {{ .Values.components.ingress.ingressClass }}
     {{- if .Values.components.certManager.enabled }}
-    cert-manager.io/cluster-issuer: {{ .Release.Name }}-{{ .Values.components.certManager.name }}-staging
+    cert-manager.io/cluster-issuer: {{ .Release.Name }}-{{ .Values.components.certManager.name }}
+    {{- end }}
+    {{- if .Values.components.ingress.ingressClassName }}
+    kubernetes.io/ingress.class: {{ .Values.components.ingress.ingressClassName }}
     {{- end }}
     {{- if .Values.commonAnnotations }}
       {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
+  {{- if .Values.components.certManager.enabled }}
+  tls:
+  - hosts:
+    - {{ .Values.components.ingress.host }}
+    secretName: {{ .Values.components.certManager.privateKeySecretName }}
+  {{- end }}
   rules:
   - http:
       paths:
@@ -51,4 +59,7 @@ spec:
             name: {{ .Release.Name }}-{{ .Values.components.gateway.service.name }}
             port:
               number: 5000
+    {{- if .Values.components.ingress.host }}
+    host: {{ .Values.components.ingress.host }}
+    {{- end }}
 {{- end }}

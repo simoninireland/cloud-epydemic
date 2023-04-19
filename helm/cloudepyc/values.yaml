@@ -72,17 +72,15 @@ components:
   ingress:
     name: ingress
     enabled: true
-    ingressClass: nginx
-
-  # Load balancer
-  loadBalancer:
-    name: load-balancer
-    enabled: true
+    ingressClassName: nginx
+    host: cloud.epydemic.org
 
   # TLS certificate manager
   certManager:
     name: cert-manager
     enabled: true
+    email: simoninireland@gmail.com
+    privateKeySecretName: letsencrypt-nginx-secret-key
 
 
 # ---------- Sub-charts ----------
@@ -97,21 +95,3 @@ rabbitmq:
   auth:
     username: epydemic
     password: "secret1234"
-
-# nginx ingress (not installed by default on all cloud providers, for
-# example Digital Ocean)
-ingress-nginx:
-  enabled: true
-
-  # overrides
-  controller:
-    publishService:
-      enabled: true
-
-# cert-manager (can be awkward to install as part of a Helm chart
-# because it installs CRDs, and so often better installed manually)
-cert-manager:
-  enabled: false
-
-  # overrides
-  installCRDs: true
