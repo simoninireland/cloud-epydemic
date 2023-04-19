@@ -44,6 +44,7 @@ HELM_CHART = cloudepyc
 # ---------- Environment ----------
 
 include ./credentials.tfvars
+include ./kubernetes.tfvars
 OCI_USERNAME=$(OCI_TENANCY_NAMESPACE)/oracleidentitycloudservice/$(OCI_USER_EMAIL)
 
 #ifneq ("$(wildcard $(TERRAFORM_OUTPUTS_FILE))", "")
