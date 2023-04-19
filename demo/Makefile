@@ -39,9 +39,8 @@ VENV = venv3
 REQUIREMENTS = requirements.txt
 
 # Demo environment
-INGRESS_IP = $(shell echo `$(KUBECTL) get ingress -n $(NAMESPACE) -o json | jq '.items[0].status.loadBalancer.ingress[0].ip'`)
 ENV = \
-	EPYDEMIC_API_GATEWAY_ENDPOINT=http://$(INGRESS_IP)/ \
+	EPYDEMIC_API_GATEWAY_ENDPOINT=https://cloud.epydemic.org/ \
 	PYTHONPATH=../containers/lib
 
 
