@@ -20,18 +20,6 @@
 
 # ---------- Notes ----------
 
-# To create the cluster we need to terraform it and add the nginx
-# ingress, which Digitqal Ocean doesn't have by default. We
-# authenticate against the provider and grabn the cluster connection
-# information for later.
-#
-# Installing nginx is tricky within helm, so we do it manually.
-#
-# We disable the nginx-ingress and cert-manager sub-charts under
-# cloudepyc because of the manual installation.
-
-# ---------- Notes ----------
-
 # This Makefile assumes that the domain hosting the server is pointing at
 # Digital Ocean's DNS, allowing the CLI tools to add and remove entries.
 
@@ -92,7 +80,7 @@ RM = rm -fr
 CHDIR = cd
 
 
-# ---------- Constructed lists ----------
+# ---------- Configuration ----------
 
 # Terraform
 TERRAFORM_DIR = .terraform
