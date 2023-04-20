@@ -17,8 +17,25 @@
 # You should have received a copy of the GNU General Public License
 # along with cloud-epydemic. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+# ---------- Notes ----------
+
+# "make start" will bring up a cluster and deploy to it. "make stop"
+# will remove the app and tear-down the cluster. These are the only
+# targets typically needed, but tghere are lots of others, one per
+# phase of the (un)deployment for more flexible control (and
+# debugging).
+
+# A cloudepyc.ClusterLab pointed at https://$(SERVICE).$(DOMAIN)
+# should connect to the compute cluste over TLS.
+
+# cert-manager is used to manage TLS certificates. This also needs to
+# be installed before anytihng else, and /has/ to live in its own
+# namespace -- otherwise cert issuance hangs silently.
+
+
 # ---------- Sources ----------
 
+# Terraform files
 SOURCES = \
 	provider.tf \
 	variables.tf \
@@ -36,16 +53,21 @@ VARIABLES = \
 	credentials.tfvars \
 	kubernetes.tfvars
 
+# Kubernetes
 NAMESPACE = cloudepydemic
 HELM_RELEASE = demo
 HELM_CHART = cloudepyc
+
+# DNS for the service and its TLS certificates
+DOMAIN = epydemic.org
+SERVICE = cloud
+EMAIL = simoninireland@gmail.com
 
 
 # ---------- Environment ----------
 
 include ./credentials.tfvars
 include ./kubernetes.tfvars
-OCI_USERNAME=$(OCI_TENANCY_NAMESPACE)/oracleidentitycloudservice/$(OCI_USER_EMAIL)
 
 #ifneq ("$(wildcard $(TERRAFORM_OUTPUTS_FILE))", "")
 include ./config.tfvars
@@ -57,30 +79,44 @@ include ./config.tfvars
 TERRAFORM = terraform
 KUBECTL = kubectl
 OCICTL = oci
+JQ = jq
 HELM = helm
 RM = rm -fr
 CHDIR = cd
 
 
-# ---------- Constructed lists ----------
+# ---------- Configuration ----------
 
 # Terraform
 TERRAFORM_DIR = .terraform
 TERRAFORM_VARIABLES = $(patsubst %.tfvars,--var-file=%.tfvars,$(VARIABLES))
 TERRAFORM_OUTPUTS_FILE = config.tfvars
 
+# cert-manager
+CERT_MANAGER_REPO = https://charts.jetstack.io
+CERT_MANAGER_RELEASE=$(HELM_RELEASE)-cert-manager
+CERT_MANAGER_CHART = cert-manager/cert-manager
+CERT_MANAGER_CHART_VERSION = v1.11.1
+CERT_MANAGER_NAMESPACE = cert-manager
+
+# Dashboard
+DASHBOARD_REPO = https://kubernetes.github.io/dashboard/
+DASHBOARD_RELEASE = $(HELM_RELEASE)-dashboard
+DASHBOARD_CHART = kubernetes-dashboard/kubernetes-dashboard
+DASHBOARD_NAMESPACE = kubernetes-dashboard
+DASHBOARD_POD = $(shell $(KUBECTL) get pods -n default -l "app.kubernetes.io/name=kubernetes-dashboard,app.kubernetes.io/instance=kubernetes-dashboard" -o json | $(JQ) '.items[0].metadata.name')
+
 # OCI
 OCI_SECRET = "ocirsecret"
 OCI_SECRET_FILE = "oci-secret.yaml"
 OCI_IMAGE_TAG = oracleidentitycloudservice/$(OCI_REPO)
+OCI_USERNAME=$(OCI_TENANCY_NAMESPACE)/oracleidentitycloudservice/$(OCI_USER_EMAIL)
 
 # Kuberbetes
 K8S_LOCAL_CONFIG = $(HOME)/.kube/config
 
 # Helm
 HELM_VARS = \
-	--set ingress-nginx.enabled=false \
-	--set cert-manager.enabled=false \
 	--set components.certManager.enabled=false \
 	--set components.engine.pods.containers.engine.image=$(OCI_IMAGE_TAG)/micro-engine:latest \
 	--set components.engine.pods.containers.engine.imagePullSecrets=$(OCI_SECRET) \
@@ -103,28 +139,57 @@ default:
 
 start:
 	@make up
-	@make authorise
+	@make authenticate
+	@make deploy-cert-manager
 	@make deploy
 
 stop:
 	@make undeploy
+	@make undeploy-cert-manager
 	@make down
-	@make deauthorise
+	@make deauthenticate
 	@make reallyclean
 
 # Part 1: Manage the deployment of the app
 
 deploy: env $(OCI_SECRET_FILE)
-	$(KUBECTL) create namespace $(NAMESPACE)
 	$(CHDIR) ../helm && $(HELM) install $(HELM_RELEASE) \
-		$(HELM_VARS) -n $(NAMESPACE) ./$(HELM_CHART)
+		$(HELM_VARS) ./$(HELM_CHART) \
+		-n $(NAMESPACE) --create-namespace
+
+upgrade: env
+	$(CHDIR) ../helm && $(HELM) upgrade $(HELM_RELEASE) \
+		$(HELM_VARS) ./$(HELM_CHART) -n $(NAMESPACE)
 
 undeploy: env
 	$(HELM) uninstall $(HELM_RELEASE) -n $(NAMESPACE)
 	-$(KUBECTL) delete namespace $(NAMESPACE)
 
-dashboard: env
-	(cd dashboard && make deploy)
+# Part 1a: Manage the auxiliary services needed by OCI
+
+deploy-cert-manager: env
+	$(HELM) repo add cert-manager $(CERT_MANAGER_REPO)
+	$(HELM) repo update cert-manager
+	$(HELM) install $(CERT_MANAGER_RELEASE) \
+		$(CERT_MANAGER_CHART) --version $(CERT_MANAGER_CHART_VERSION) \
+		--set installCRDs=true \
+		-n $(CERT_MANAGER_NAMESPACE) --create-namespace
+
+undeploy-cert-manager: env
+	-$(HELM) uninstall $(CERT_MANAGER_RELEASE) -n $(CERT_MANAGER_NAMESPACE)
+	-$(KUBECTL) delete namespace $(CERT_MANAGER_NAMESPACE)
+
+deploy-dashboard: env
+	$(HELM) install $(DASHBOARD_RELEASE) $(DASHBOARD_CHART) \
+		-n $(DASHBOARD_NAMESPACE) --create-namespace \
+		--set resources.limits.cpu=200m
+	$(KUBECTL) apply -f dashboard.yaml -n $(DASHBOARD_NAMESPACE)
+	$(KUBECTL) create token admin-user -n $(DASHBOARD_NAMESPACE)
+
+undeploy-dashboard: env
+	-$(HELM) uninstall $(DASHBOARD_RELEASE) -n $(DASHBOARD_NAMESPACE)
+	-$(KUBECTL) delete namespace $(DASHBOARD_NAMESPACE)
+	-$(KUBECTL) delete -f dashboard.yaml
 
 # Part 2: Manage terraforming the Kubernetes cluster
 
@@ -136,6 +201,8 @@ down: env
 	$(TERRAFORM) destroy $(TERRAFORM_VARIABLES) -auto-approve
 	$(RM) $(TERRAFORM_OUTPUTS_FILE)
 
+oci-secret: $(OCI_SECRET_FILE)
+
 $(OCI_SECRET_FILE): env
 	$(KUBECTL) create secret docker-registry $(OCI_SECRET) \
 		--docker-server=$(OCI_REGION).ocir.io \
@@ -143,16 +210,16 @@ $(OCI_SECRET_FILE): env
 		--docker-email=$(OCI_USER_EMAIL)
 	$(KUBECTL) get secret $(OCI_SECRET) --output=yaml >$(OCI_SECRET_FILE)
 
-# Part 3: Local authorisation to access the cluster
+# Part 3: Local authentication to access the cluster
 
-authorise: env
+authenticate: env
 	$(OCICTL) ce cluster create-kubeconfig --token-version 2.0.0 \
 		--cluster-id $(OCI_K8S_CLUSTER_OCID) --region $(OCI_REGION)  \
 		--file $(K8S_LOCAL_CONFIG)
+	@make oci-secret
 
-deauthorise:
+deauthenticate:
 	-$(RM) $(OCI_SECRET_FILE)
-	-$(KUBECTL) delete namespace $(NAMESPACE)
 
 # Part 4: Environment management
 
@@ -172,20 +239,26 @@ reallyclean: clean
 # ----- Usage -----
 
 define HELP_MESSAGE
-Main targets:
-   make start        start the epyc compute server in a cluster
-   make stop         stop the server
+Main targets (for users):
+   make start                  start the cluster and compute server
+   make stop                   stop the server snd cluster
 
-More detailed targets:
-   make up           spin-up the Kubernetes cluster
-   make down         spin-down the cluster
-   make deploy       deploy the epyc server
-   make undeploy     dismantle the server
-   make dashboard    deploy and open a Kubernetes dashboard
-   make authorise    authorise local kubectl client against the cluster
-   make deauthorise  de-authorise the client
-   make clean        clean-up deployment
-   make reallyclean  clean-up local environment
+More detailed targets (for development):
+   make up                     spin-up the Kubernetes cluster
+   make down
+   make deploy                 deploy the epyc server
+   make undeploy
+   make upgrade                upgrade the server after changes
+   make deploy-cert-manager    deploy cert-manager and its CRDs
+   make undeploy-cert-manager
+   make deploy-dashboard       deploy Kubernetes dashboard
+   make undeploy-dashboard
+   make authenticate           authenticate local kubectl client
+   make deauthenticate
+   make oci-secret             create the cluster secret
+   make env                    create a local environment
+   make clean                  clean-up deployment
+   make reallyclean            clean-up local environment
 
 endef
 export HELP_MESSAGE
