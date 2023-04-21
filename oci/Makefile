@@ -25,6 +25,13 @@
 # phase of the (un)deployment for more flexible control (and
 # debugging).
 
+# OCI doesn't deploy the Kubernetes dashboard by default. Since this
+# is essential for development, "make deploy-dashboard" will deploy
+# it. The namespace is fixed as kubernetes-dashboard: this is needed
+# to create the service account, role binding, and bearer token as
+# described in oci/dashboard.yaml. If you need to change the
+# namespace, change it here too.
+
 # A cloudepyc.ClusterLab pointed at https://$(SERVICE).$(DOMAIN)
 # should connect to the compute cluste over TLS.
 
@@ -69,9 +76,10 @@ EMAIL = simoninireland@gmail.com
 include ./credentials.tfvars
 include ./kubernetes.tfvars
 
-#ifneq ("$(wildcard $(TERRAFORM_OUTPUTS_FILE))", "")
+# values extracted after terraforming the cluster
+ifneq ("$(wildcard $(TERRAFORM_OUTPUTS_FILE))",)
 include ./config.tfvars
-#endif
+endif
 
 
 # ---------- Tools ----------
@@ -103,13 +111,12 @@ CERT_MANAGER_NAMESPACE = cert-manager
 DASHBOARD_REPO = https://kubernetes.github.io/dashboard/
 DASHBOARD_RELEASE = $(HELM_RELEASE)-dashboard
 DASHBOARD_CHART = kubernetes-dashboard/kubernetes-dashboard
-DASHBOARD_NAMESPACE = kubernetes-dashboard
 DASHBOARD_POD = $(shell $(KUBECTL) get pods -n default -l "app.kubernetes.io/name=kubernetes-dashboard,app.kubernetes.io/instance=kubernetes-dashboard" -o json | $(JQ) '.items[0].metadata.name')
 
 # OCI
 OCI_SECRET = "ocirsecret"
 OCI_SECRET_FILE = "oci-secret.yaml"
-OCI_IMAGE_TAG = oracleidentitycloudservice/$(OCI_REPO)
+OCI_IMAGE_TAG = $(OCI_REGION).ocir.io/$(OCI_TENANCY_NAMESPACE)/$(OCI_REPO)
 OCI_USERNAME=$(OCI_TENANCY_NAMESPACE)/oracleidentitycloudservice/$(OCI_USER_EMAIL)
 
 # Kuberbetes
@@ -139,12 +146,14 @@ default:
 
 start:
 	@make up
+	@make deploy-namespace
 	@make authenticate
 	@make deploy-cert-manager
 	@make deploy
 
 stop:
 	@make undeploy
+	@make undeploy-namespace
 	@make undeploy-cert-manager
 	@make down
 	@make deauthenticate
@@ -152,7 +161,7 @@ stop:
 
 # Part 1: Manage the deployment of the app
 
-deploy: env $(OCI_SECRET_FILE)
+deploy: env
 	$(CHDIR) ../helm && $(HELM) install $(HELM_RELEASE) \
 		$(HELM_VARS) ./$(HELM_CHART) \
 		-n $(NAMESPACE) --create-namespace
@@ -162,8 +171,13 @@ upgrade: env
 		$(HELM_VARS) ./$(HELM_CHART) -n $(NAMESPACE)
 
 undeploy: env
-	$(HELM) uninstall $(HELM_RELEASE) -n $(NAMESPACE)
-	-$(KUBECTL) delete namespace $(NAMESPACE)
+	-$(HELM) uninstall $(HELM_RELEASE) -n $(NAMESPACE)
+
+deploy-namespace:
+	$(KUBECTL) create namespace $(NAMESPACE)
+
+undeploy-namespace:
+	$(KUBECTL) delete namespace $(NAMESPACE)
 
 # Part 1a: Manage the auxiliary services needed by OCI
 
@@ -177,19 +191,21 @@ deploy-cert-manager: env
 
 undeploy-cert-manager: env
 	-$(HELM) uninstall $(CERT_MANAGER_RELEASE) -n $(CERT_MANAGER_NAMESPACE)
-	-$(KUBECTL) delete namespace $(CERT_MANAGER_NAMESPACE)
+	#-$(KUBECTL) delete namespace $(CERT_MANAGER_NAMESPACE)
 
 deploy-dashboard: env
+	$(HELM) repo add kubernetes-dashboard $(DASHBOARD_REPO)
+	$(HELM) repo update kubernetes-dashboard
 	$(HELM) install $(DASHBOARD_RELEASE) $(DASHBOARD_CHART) \
-		-n $(DASHBOARD_NAMESPACE) --create-namespace \
+		-n kubernetes-dashboard --create-namespace \
 		--set resources.limits.cpu=200m
-	$(KUBECTL) apply -f dashboard.yaml -n $(DASHBOARD_NAMESPACE)
-	$(KUBECTL) create token admin-user -n $(DASHBOARD_NAMESPACE)
+	$(KUBECTL) apply -f dashboard.yaml -n kubernetes-dashboard
+	$(KUBECTL) create token admin-user -n kubernetes-dashboard
 
 undeploy-dashboard: env
-	-$(HELM) uninstall $(DASHBOARD_RELEASE) -n $(DASHBOARD_NAMESPACE)
-	-$(KUBECTL) delete namespace $(DASHBOARD_NAMESPACE)
+	-$(HELM) uninstall $(DASHBOARD_RELEASE) -n kubernetes-dashboard
 	-$(KUBECTL) delete -f dashboard.yaml
+	#-$(KUBECTL) delete namespace kubernetes-dashboard
 
 # Part 2: Manage terraforming the Kubernetes cluster
 
@@ -199,16 +215,17 @@ up: env
 
 down: env
 	$(TERRAFORM) destroy $(TERRAFORM_VARIABLES) -auto-approve
-	$(RM) $(TERRAFORM_OUTPUTS_FILE)
+	$(RM) $(TERRAFORM_OUTPUTS_FILE) config.tfvars
 
-oci-secret: $(OCI_SECRET_FILE)
+repo-secret: $(OCI_SECRET_FILE)
 
 $(OCI_SECRET_FILE): env
 	$(KUBECTL) create secret docker-registry $(OCI_SECRET) \
-		--docker-server=$(OCI_REGION).ocir.io \
+		--docker-server=$(OCI_REGION).ocir.io/ \
 		--docker-username=$(OCI_USERNAME) --docker-password=$(OCI_PASSWORD) \
-		--docker-email=$(OCI_USER_EMAIL)
-	$(KUBECTL) get secret $(OCI_SECRET) --output=yaml >$(OCI_SECRET_FILE)
+		--docker-email=$(OCI_USER_EMAIL) \
+		-n $(NAMESPACE)
+	$(KUBECTL) get secret $(OCI_SECRET) -n $(NAMESPACE) --output=yaml >$(OCI_SECRET_FILE)
 
 # Part 3: Local authentication to access the cluster
 
@@ -216,10 +233,12 @@ authenticate: env
 	$(OCICTL) ce cluster create-kubeconfig --token-version 2.0.0 \
 		--cluster-id $(OCI_K8S_CLUSTER_OCID) --region $(OCI_REGION)  \
 		--file $(K8S_LOCAL_CONFIG)
-	@make oci-secret
+	$(OCICTL) setup repair-file-permissions --file $(K8S_LOCAL_CONFIG)
+	@make repo-secret
 
 deauthenticate:
 	-$(RM) $(OCI_SECRET_FILE)
+	-$(KUBECTL) delete secret $(OCI_SECRET) -n $(NAMESPACE)
 
 # Part 4: Environment management
 
@@ -230,7 +249,8 @@ $(TERRAFORM_DIR):
 
 clean:
 	-$(RM) $(OCI_SECRET_FILE)
-	-$(KUBECTL) delete namespace $(NAMESPACE)
+	-$(KUBECTL) delete secret $(OCI_SECRET) -n $(NAMESPACE)
+	#-$(KUBECTL) delete namespace $(NAMESPACE)
 
 reallyclean: clean
 	$(RM) $(TERRAFORM_DIR) *.tfstate*
@@ -249,13 +269,15 @@ More detailed targets (for development):
    make deploy                 deploy the epyc server
    make undeploy
    make upgrade                upgrade the server after changes
+   make deploy-namespace       deploy the application namespace
+   make undeploy-namespace
    make deploy-cert-manager    deploy cert-manager and its CRDs
    make undeploy-cert-manager
    make deploy-dashboard       deploy Kubernetes dashboard
    make undeploy-dashboard
    make authenticate           authenticate local kubectl client
    make deauthenticate
-   make oci-secret             create the cluster secret
+   make repo-secret            create the cluster repo secret
    make env                    create a local environment
    make clean                  clean-up deployment
    make reallyclean            clean-up local environment
